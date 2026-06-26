@@ -1,25 +1,65 @@
-{
+﻿{
   "expo": {
-    "name": "freshy",
+    "name": "Freshy",
     "slug": "freshy",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "scheme": "freshy",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.freshy.app",
+      "deploymentTarget": "16.4",
+      "infoPlist": {
+        "NSUserNotificationsUsageDescription": "Freshy sends reminders when your estimated bed freshness drops.",
+        "UIBackgroundModes": ["fetch", "remote-notification"]
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#FFF8F0"
       },
-      "predictiveBackGestureEnabled": false
+      "package": "com.freshy.app"
     },
     "web": {
+      "bundler": "metro",
+      "output": "static",
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#FF6B6B",
+          "defaultChannel": "freshness-reminders"
+        }
+      ],
+      "react-native-reanimated",
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.freshy.app",
+          "widgets": [
+            {
+              "name": "BedStatusWidget",
+              "displayName": "Bed Status",
+              "description": "Estimated bed freshness at a glance",
+              "ios": {
+                "supportedFamilies": ["systemSmall", "systemMedium"]
+              }
+            }
+          ]
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
