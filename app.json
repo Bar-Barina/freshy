@@ -30,6 +30,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "./plugins/withGradleProperties",
       "expo-router",
       "expo-secure-store",
       "expo-font",
