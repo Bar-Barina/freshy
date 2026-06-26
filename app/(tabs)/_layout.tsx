@@ -1,23 +1,24 @@
 import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Colors, Spacing } from '@/theme';
 
+const TAB_ICONS: Record<string, { active: string; inactive: string }> = {
+  Home:     { active: '🏠', inactive: '🏡' },
+  History:  { active: '📋', inactive: '📄' },
+  Settings: { active: '⚙️', inactive: '🔧' },
+};
+
 function TabIcon({ focused, label }: { focused: boolean; label: string }) {
-  const icons: Record<string, string> = {
-    Home: focused ? '🏠' : '🏡',
-    History: focused ? '📋' : '📄',
-    Settings: focused ? '⚙️' : '🔧',
-  };
+  const icon = TAB_ICONS[label];
+  const emoji = icon ? (focused ? icon.active : icon.inactive) : '';
   return (
-    <View style={styles.tabIcon}>
+    <View
+      style={styles.tabIcon}
+      accessibilityLabel={`${label} tab${focused ? ', selected' : ''}`}
+      accessibilityRole="tab"
+    >
       <View style={[styles.tabIconInner, focused && styles.tabIconInnerFocused]}>
-        <View style={styles.iconEmoji}>
-          <View
-            accessibilityLabel={`${label} tab${focused ? ', selected' : ''}`}
-            accessibilityRole="tab"
-          >
-          </View>
-        </View>
+        <Text style={styles.iconEmoji}>{emoji}</Text>
       </View>
     </View>
   );
@@ -86,7 +87,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accentLight,
   },
   iconEmoji: {
-    width: 20,
-    height: 20,
+    fontSize: 20,
   },
 });

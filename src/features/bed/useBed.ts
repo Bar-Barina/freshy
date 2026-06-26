@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Bed, BedEvent, FreshnessStatus, BedEventType } from '@/types';
 import { calculateFreshness, DEFAULT_EVENT_PENALTIES } from '@/utils/freshnessCalculator';
 import { loadBed, saveBed, createDefaultBed } from './bedStore';
@@ -17,17 +17,14 @@ interface UseBedReturn {
 
 export function useBed(): UseBedReturn {
   const { settings } = useSettings();
+
+  // Lazy initializer — MMKV is synchronous, so state is populated on the first render.
+  // No useEffect needed; this avoids a redundant re-render on mount.
   const [bed, setBed] = useState<Bed>(() => loadBed());
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(true);
 
   // Recalculate freshness on each render/update — pure, fast, no side effects
   const status = calculateFreshness(bed, new Date());
-
-  useEffect(() => {
-    const loaded = loadBed();
-    setBed(loaded);
-    setIsLoaded(true);
-  }, []);
 
   const updateAndPersist = useCallback((updater: (prev: Bed) => Bed) => {
     setBed((prev) => {

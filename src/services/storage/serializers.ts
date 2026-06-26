@@ -31,7 +31,7 @@ export function deserializeBed(raw: unknown): Bed {
         ? obj.preferredChangeIntervalDays
         : EMPTY_BED.preferredChangeIntervalDays,
     events: Array.isArray(obj.events)
-      ? obj.events.map(deserializeBedEvent).filter(Boolean)
+      ? obj.events.map(deserializeBedEvent).filter((e): e is BedEvent => e !== null)
       : [],
     createdAt: typeof obj.createdAt === 'string' ? obj.createdAt : EMPTY_BED.createdAt,
     updatedAt: typeof obj.updatedAt === 'string' ? obj.updatedAt : EMPTY_BED.updatedAt,

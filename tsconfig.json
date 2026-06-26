@@ -9,12 +9,17 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "ignoreDeprecations": "6.0"
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.d.ts",
     "expo-env.d.ts"
+  ],
+  "exclude": [
+    "__tests__",
+    "node_modules"
   ]
 }

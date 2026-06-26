@@ -1,8 +1,10 @@
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, BorderRadius, Shadow, getBandColor } from '@/theme';
 import { useBed } from '@/features/bed/useBed';
-import * as Haptics from 'expo-haptics';
+import { BedIllustration } from '@/components/BedIllustration';
+import { ScoreRing } from '@/components/ScoreRing';
 
 export default function HomeScreen() {
   const { bed, status, markSheetsChanged } = useBed();
@@ -20,45 +22,43 @@ export default function HomeScreen() {
       ? 'Changed today'
       : `Day ${status.daysSinceChange}`;
 
+  const scoreText =
+    bed.lastChangedAt === null ? '—' : String(Math.round(status.score));
+  const showPercent = bed.lastChangedAt !== null;
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
+        {/* ── Header ──────────────────────────────────────────────── */}
         <View style={styles.header}>
           <Text style={styles.appTitle}>Bed Status</Text>
           <Text style={styles.bedName}>{bed.name}</Text>
         </View>
 
-        {/* Main card */}
+        {/* ── Main card ───────────────────────────────────────────── */}
         <View style={[styles.scoreCard, Shadow.md]}>
-          {/* Bed illustration placeholder — replaced in Phase 3 with SVG */}
-          <View style={[styles.illustrationContainer, { backgroundColor: `${bandColor}20` }]}>
-            <Text style={styles.illustrationEmoji}>
-              {status.band === 'fresh' && '✨🛏️✨'}
-              {status.band === 'ok' && '🛏️'}
-              {status.band === 'soon' && '😐🛏️'}
-              {status.band === 'warning' && '😬🛏️'}
-              {status.band === 'biohazard' && '☣️🛏️☣️'}
-            </Text>
-          </View>
+          {/* Score ring wraps the bed illustration */}
+          <ScoreRing score={status.score} band={status.band} size={196} strokeWidth={10}>
+            <BedIllustration band={status.band} size={162} />
+          </ScoreRing>
 
-          {/* Score */}
+          {/* Score block */}
           <View style={styles.scoreBlock}>
-            <Text style={[styles.scoreNumber, { color: bandColor }]}>
-              {status.lastChangedAt === null ? '—' : Math.round(status.score)}
-              {status.lastChangedAt !== null && (
-                <Text style={styles.scorePercent}>%</Text>
+            <View style={styles.scoreRow}>
+              <Text style={[styles.scoreNumber, { color: bandColor }]}>{scoreText}</Text>
+              {showPercent && (
+                <Text style={[styles.scorePercent, { color: bandColor }]}>%</Text>
               )}
-            </Text>
+            </View>
             <Text style={styles.statusLabel}>{status.label}</Text>
             <Text style={styles.dayLabel}>{dayLabel}</Text>
           </View>
         </View>
 
-        {/* Primary CTA */}
+        {/* ── Primary CTA ─────────────────────────────────────────── */}
         <Pressable
           style={styles.ctaButton}
           onPress={handleChanged}
@@ -68,14 +68,14 @@ export default function HomeScreen() {
           <Text style={styles.ctaButtonText}>I changed the sheets</Text>
         </Pressable>
 
-        {/* Quick actions */}
+        {/* ── Quick actions ────────────────────────────────────────── */}
         <View style={styles.quickActions}>
           <QuickActionButton label="Add event" emoji="➕" onPress={() => { /* Phase 6 */ }} />
           <QuickActionButton label="Share" emoji="📤" onPress={() => { /* Phase 9 */ }} />
           <QuickActionButton label="Partner" emoji="👫" onPress={() => { /* Phase 7 */ }} />
         </View>
 
-        {/* Disclaimer */}
+        {/* ── Disclaimer ───────────────────────────────────────────── */}
         <Text style={styles.disclaimer}>
           Freshy is a fun reminder tool and does not provide medical or hygiene advice.
         </Text>
@@ -107,35 +107,60 @@ function QuickActionButton({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   scrollContent: {
     paddingHorizontal: Spacing.xl,
     paddingBottom: Spacing.xxxl,
     gap: Spacing.xl,
   },
-  header: { paddingTop: Spacing.xl, gap: Spacing.xs },
-  appTitle: { ...Typography.labelSM, color: Colors.textMuted },
-  bedName: { ...Typography.h2, color: Colors.textPrimary },
+  header: {
+    paddingTop: Spacing.xl,
+    gap: Spacing.xs,
+  },
+  appTitle: {
+    ...Typography.labelSM,
+    color: Colors.textMuted,
+  },
+  bedName: {
+    ...Typography.h2,
+    color: Colors.textPrimary,
+  },
   scoreCard: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xxl,
-    padding: Spacing.xl,
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
     alignItems: 'center',
-    gap: Spacing.xl,
+    gap: Spacing.lg,
   },
-  illustrationContainer: {
-    width: 160,
-    height: 160,
-    borderRadius: BorderRadius.xxl,
+  scoreBlock: {
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: Spacing.sm,
   },
-  illustrationEmoji: { fontSize: 64 },
-  scoreBlock: { alignItems: 'center', gap: Spacing.sm },
-  scoreNumber: { ...Typography.scoreXL },
-  scorePercent: { ...Typography.scoreLG },
-  statusLabel: { ...Typography.h3, color: Colors.textPrimary },
-  dayLabel: { ...Typography.bodyMD, color: Colors.textMuted },
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  scoreNumber: {
+    ...Typography.scoreXL,
+  },
+  scorePercent: {
+    ...Typography.scoreLG,
+    // Align % sign at the bottom of the large number
+    paddingBottom: 6,
+    marginLeft: 2,
+  },
+  statusLabel: {
+    ...Typography.h3,
+    color: Colors.textPrimary,
+  },
+  dayLabel: {
+    ...Typography.bodyMD,
+    color: Colors.textMuted,
+  },
   ctaButton: {
     backgroundColor: Colors.accent,
     borderRadius: BorderRadius.xxl,
@@ -143,8 +168,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...Shadow.sm,
   },
-  ctaButtonText: { ...Typography.labelLG, color: Colors.white, fontSize: 17 },
-  quickActions: { flexDirection: 'row', gap: Spacing.md },
+  ctaButtonText: {
+    ...Typography.labelLG,
+    color: Colors.white,
+    fontSize: 17,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
   quickAction: {
     flex: 1,
     backgroundColor: Colors.surface,
@@ -155,8 +187,13 @@ const styles = StyleSheet.create({
     ...Shadow.sm,
     minHeight: 44,
   },
-  quickActionEmoji: { fontSize: 22 },
-  quickActionLabel: { ...Typography.labelSM, color: Colors.textSecondary },
+  quickActionEmoji: {
+    fontSize: 22,
+  },
+  quickActionLabel: {
+    ...Typography.labelSM,
+    color: Colors.textSecondary,
+  },
   disclaimer: {
     ...Typography.caption,
     color: Colors.textMuted,

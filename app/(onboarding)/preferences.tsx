@@ -23,7 +23,7 @@ export default function PreferencesScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>A few quick questions</Text>
-        <Text style={styles.subtitle}>We'll use these to personalize your freshness score.</Text>
+        <Text style={styles.subtitle}>{"We'll use these to personalize your freshness score."}</Text>
 
         {/* Interval picker */}
         <View style={styles.section}>

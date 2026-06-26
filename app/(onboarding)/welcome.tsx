@@ -2,14 +2,15 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Typography, Spacing, BorderRadius } from '@/theme';
+import { BedIllustration } from '@/components/BedIllustration';
 
 export default function WelcomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {/* Placeholder illustration — replaced in Phase 3 */}
-        <View style={styles.illustrationPlaceholder}>
-          <Text style={styles.illustrationEmoji}>🛏️</Text>
+        {/* Bed illustration in fresh state — first impression sets the tone */}
+        <View style={styles.illustrationContainer}>
+          <BedIllustration band="fresh" size={200} />
         </View>
 
         <View style={styles.textBlock}>
@@ -48,17 +49,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: Spacing.xl,
   },
-  illustrationPlaceholder: {
-    width: 180,
-    height: 180,
-    borderRadius: BorderRadius.xxl,
-    backgroundColor: Colors.freshLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+  illustrationContainer: {
     marginBottom: Spacing.xxxl,
-  },
-  illustrationEmoji: {
-    fontSize: 80,
+    // No explicit width/height — SVG handles its own size via the `size` prop
   },
   textBlock: {
     alignItems: 'center',
