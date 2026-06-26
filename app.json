@@ -40,7 +40,7 @@
           "defaultChannel": "freshness-reminders"
         }
       ],
-      "react-native-reanimated",
+      "react-native-reanimated/plugin",
       [
         "expo-widgets",
         {
