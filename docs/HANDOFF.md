@@ -9,7 +9,7 @@
 ## Current Branch
 
 `develop` (integration branch)
-Active phase branch: `phase/3-main-ui` (create from develop if not yet created)
+Phase 3 PR open: https://github.com/Bar-Barina/freshy/pull/1
 
 ---
 
@@ -20,58 +20,45 @@ Active phase branch: `phase/3-main-ui` (create from develop if not yet created)
 - `docs/ARCHITECTURE.md` — all structural decisions
 - `docs/RISKS.md` — 13 risks, all mitigated or deferred
 
-### Phase 1 — Project Setup (DONE, committed to main, folded into single commit)
-- Expo SDK 56 + expo-router + TypeScript (blank-typescript template, App.tsx removed)
-- `index.ts` → `import 'expo-router/entry'`
-- All dependencies installed (react-native-mmkv, @supabase/supabase-js, date-fns, reanimated, react-native-svg, view-shot, notifications, haptics)
-- ESLint + Prettier + tsconfig strict mode
-- `app.json` — full expo config with expo-widgets plugin, expo-router, notifications, scheme "freshy", bundleId "com.freshy.app"
-- `eas.json` — dev, dev-simulator, preview, production profiles
-- `.env.example`, `.gitignore`, `README.md`, `.github/workflows/ci.yml`
+### Phase 1 — Project Setup (DONE, committed to main)
+- Expo SDK 56 + expo-router + TypeScript
+- All dependencies installed (react-native-mmkv v4, @supabase/supabase-js, date-fns, reanimated, react-native-svg, view-shot, notifications, haptics)
+- `app.json`, `eas.json`, `.env.example`, `.gitignore`, `README.md`, `.github/workflows/ci.yml`
 
-Theme tokens (`src/theme/`):
-- `colors.ts` — Colors object, getBandColor(), getBandLightColor()
-- `typography.ts` — full scale (scoreXL, scoreLG, h1–h3, bodyLG/MD/SM, labelLG/MD/SM, caption)
-- `spacing.ts` — Spacing, BorderRadius, Shadow, MIN_TAP_TARGET
-- `index.ts` — re-exports all
+Theme tokens (`src/theme/`): colors.ts, typography.ts, spacing.ts, index.ts
 
 ### Phase 2 — Core Bed Engine (DONE, folded into Phase 1 commit)
 
-Types (`src/types/index.ts`):
-- FreshnessBand, Bed, BedEvent, BedEventType, UserSettings, DEFAULT_SETTINGS, FreshnessStatus, SharedBedMember, WidgetProps, PersistedBed, QueuedMutation
+Types, storage, utilities, features, tests — all complete.
+**56 tests passing, 97.5% line coverage** on calculator + serializers.
 
-Storage (`src/services/storage/`):
-- `mmkv.ts` — MMKV instance, storageGet/Set/Delete/Has, STORAGE_KEYS
-- `serializers.ts` — deserializeBed, deserializeBedEvent, deserializeSettings, deserializeQueue (safe defaults on corrupted input)
+Navigation skeleton with placeholder screens in place.
 
-Utilities:
-- `src/utils/freshnessCalculator.ts` — calculateFreshness(), sumEventPenalties(), getStatusBand(), clamp(), wholeDaysBetween(), DEFAULT_EVENT_PENALTIES
-- `src/utils/generateId.ts` — generateId() (crypto.randomUUID), generateInviteCode() (Crockford base32, 12 chars)
+### Phase 3 — Main UI (DONE — PR #1 open, awaiting merge to develop)
 
-Features:
-- `src/features/bed/bedStore.ts` — loadBed(), saveBed(), createDefaultBed()
-- `src/features/bed/useBed.ts` — useBed() hook
-- `src/features/settings/useSettings.ts` — useSettings() hook
+Branch: `phase/3-main-ui` → commit `5e328d5`
 
-Tests: **56 passing, 97.5% line coverage** on calculator + serializers
+New files:
+- `src/components/BedIllustration.tsx` — SVG bed illustration, 5 freshness states
+- `src/components/ScoreRing.tsx` — circular progress ring with `children` support
+- `docs/HANDOFF.md` (this file)
+- `eslint.config.js` — ESLint v10 flat config (migrated from `.eslintrc.js`)
 
-Navigation (placeholder content):
-- `app/_layout.tsx` — root layout with onboarding gate
-- `app/(onboarding)/_layout.tsx`, `welcome.tsx`, `preferences.tsx`, `notifications.tsx`
-- `app/(tabs)/_layout.tsx`, `index.tsx` (Home), `history.tsx`, `settings.tsx`
-- `app/privacy.tsx`, `app/terms.tsx`
+Updated files:
+- `app/(tabs)/index.tsx` — ScoreRing wraps BedIllustration; no emoji
+- `app/(onboarding)/welcome.tsx` — BedIllustration band="fresh"
+- `src/features/bed/useBed.ts` — lazy useState initializer (removed redundant useEffect)
+- `src/features/settings/useSettings.ts` — lazy useState initializer (removed redundant useEffect)
+- `src/services/storage/mmkv.ts` — fixed for react-native-mmkv v4 (createMMKV, remove not delete)
+- `src/services/storage/serializers.ts` — type-safe filter guard
+- `app/(tabs)/_layout.tsx` — TAB_ICONS map renders emoji
+- `app/_layout.tsx` — removed unused useEffect import
+- `app/(onboarding)/preferences.tsx` — escaped apostrophe
+- `app/terms.tsx` — escaped quotes
+- `tsconfig.json` — ignoreDeprecations: "6.0", exclude __tests__
+- `package.json` — updated lint script for ESLint v10
 
-### Phase 3 — Main UI (IN PROGRESS)
-
-Components built this session:
-- `src/components/BedIllustration.tsx` — SVG bed illustration, 5 freshness states (fresh/ok/soon/warning/biohazard), accepts `band` + `size` props
-- `src/components/ScoreRing.tsx` — circular progress ring using SVG strokeDasharray, accepts `score`, `band`, `size`, `strokeWidth`, `children` props (bed illustration goes inside ring)
-
-Screens updated:
-- `app/(tabs)/index.tsx` — ScoreRing wraps BedIllustration; emoji placeholders removed
-- `app/(onboarding)/welcome.tsx` — BedIllustration in 'fresh' state replaces emoji
-
-Status: PR open for `phase/3-main-ui` → `develop`
+Quality gate at merge: tsc 0 errors | eslint 0 warnings | 56/56 tests
 
 ---
 
@@ -80,17 +67,19 @@ Status: PR open for `phase/3-main-ui` → `develop`
 ### Phase 4 — Animations (next after Phase 3 PR merged)
 Branch: `git checkout -b phase/4-animations` from `develop`
 
+**Objectives:**
 - Reanimated spring on "I changed the sheets" CTA (scale pulse on press)
-- Animated score counter: count up/down with spring easing (update ScoreRing number display)
-- BedIllustration crossfade between band states (FadeTransition wrapper using Reanimated)
-- Haptic feedback already imported — add ImpactFeedback on quick actions
-- `useReducedMotion()` hook — skip animations when iOS reduces motion is enabled
+- Animated score counter: `useSharedValue` + `useDerivedValue` + `useAnimatedProps` to animate the ring's `strokeDashoffset` and the score number (count up/down)
+- BedIllustration crossfade between band states: track previous band, interpolate opacity between two BedIllustration instances
+- `useReducedMotion()` hook — reads `AccessibilityInfo.isReduceMotionEnabled`, skip all animations when true
 
-Files:
+**Files to create:**
 - `src/hooks/useReducedMotion.ts` (new)
-- `src/components/AnimatedScoreRing.tsx` (new, wraps ScoreRing with animated counter)
-- `src/components/BedIllustration.tsx` (update — add crossfade via opacity interpolation)
-- `app/(tabs)/index.tsx` (update — animated CTA button, use AnimatedScoreRing)
+- `src/components/AnimatedScoreRing.tsx` (new — wraps ScoreRing with animated strokeDashoffset)
+
+**Files to update:**
+- `src/components/BedIllustration.tsx` — accept optional `animated` prop, crossfade via Animated.View when band changes
+- `app/(tabs)/index.tsx` — use AnimatedScoreRing, add spring press handler on CTA
 
 ### Phase 5 — Notifications
 - `src/services/notifications/notificationService.ts`
@@ -100,32 +89,29 @@ Files:
 - In-app permission banner if denied
 
 ### Phase 6 — History and Events
-- `src/features/events/EventSheet.tsx` — bottom sheet with preset chips + custom event
-- `src/features/events/eventDefaults.ts` — preset event list with penalties
-- Wire Add Event button on Home screen
-- Date-grouped history list in `app/(tabs)/history.tsx`
-- Swipe-to-delete with confirmation
+- `src/features/events/EventSheet.tsx`
+- `src/features/events/eventDefaults.ts`
+- Wire Add Event button
+- Date-grouped history list
+- Swipe-to-delete
 
 ### Phase 7 — Partner Sync
-- `supabase/migrations/001_initial.sql`, `002_rls_policies.sql`
-- `src/services/supabase/client.ts`, `auth.ts`
-- `src/features/partner/usePartnerSync.ts`, `inviteCode.ts`
-- Anonymous sign-in on first launch, stored in expo-secure-store
-- join_bed_by_invite RPC (SECURITY DEFINER)
-- Realtime subscription on beds table
-- Offline mutation queue (MMKV)
+- Supabase migrations, client, auth
+- usePartnerSync, inviteCode
+- Anonymous sign-in + SecureStore
+- Realtime subscription + offline queue
 
 ### Phase 8 — iOS Widget
 - `src/widgets/BedStatusWidget.tsx` — 'widget' directive, @expo/ui/swift-ui only
-- `src/features/widget/widgetSync.ts` — updateSnapshot on state changes, midnight timeline
+- `src/features/widget/widgetSync.ts` — updateSnapshot + midnight timeline
 - Requires EAS dev build + physical device
 
 ### Phase 9 — Polish
-- `src/components/ShareCard.tsx` — react-native-view-shot + expo-sharing
-- Accessibility audit (44pt targets, VoiceOver labels)
+- ShareCard + react-native-view-shot
+- Accessibility audit
 
 ### Phase 10 — Release
-- `docs/MVP_REVIEW.md`, EAS production build, v0.1.0 tag
+- docs/MVP_REVIEW.md, EAS production build, v0.1.0 tag
 
 ---
 
@@ -134,7 +120,9 @@ Files:
 - jest@29 (NOT 30) — required for jest-expo 56 compatibility
 - `npm install --legacy-peer-deps` for all installs
 - No state management library — hooks + MMKV only
-- Local-first: render MMKV immediately, sync Supabase in background
+- Local-first: lazy useState initializers for synchronous MMKV reads
+- react-native-mmkv v4: `createMMKV()` factory, `storage.remove()` not `storage.delete()`
+- ESLint v10: flat config in `eslint.config.js`, React version pinned to '19'
 - Widget uses updateSnapshot on user action + 14 midnight timeline entries
 - Invite code: Crockford base32, 12 chars, SECURITY DEFINER RPC
 
@@ -150,9 +138,10 @@ Read docs/RISKS.md and docs/ARCHITECTURE.md for architectural decisions.
 Do NOT re-scaffold or re-install anything.
 
 Current branch: develop
-Next task: Phase 4 — Animations (create branch phase/4-animations from develop)
+Phase 3 PR is open at https://github.com/Bar-Barina/freshy/pull/1 — merge it first.
+Next task: Phase 4 — Animations (create branch phase/4-animations from develop after merge)
 
-See docs/HANDOFF.md "What Needs to Be Built Next" → Phase 4 for full spec.
+See docs/HANDOFF.md for full Phase 4 spec.
 
 Quality rules:
 - Zero `any` in src/
@@ -161,4 +150,6 @@ Quality rules:
 - npm install --legacy-peer-deps
 - jest@29 (not 30)
 - Read exact Expo SDK 56 docs before writing any Expo API code: https://docs.expo.dev/versions/v56.0.0/
+- react-native-mmkv v4: use createMMKV(), use storage.remove() not storage.delete()
+- ESLint v10 flat config is in eslint.config.js (not .eslintrc.js)
 ```
