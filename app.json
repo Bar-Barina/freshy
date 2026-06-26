@@ -39,23 +39,6 @@
           "color": "#FF6B6B",
           "defaultChannel": "freshness-reminders"
         }
-      ],
-      "react-native-reanimated/plugin",
-      [
-        "expo-widgets",
-        {
-          "groupIdentifier": "group.com.freshy.app",
-          "widgets": [
-            {
-              "name": "BedStatusWidget",
-              "displayName": "Bed Status",
-              "description": "Estimated bed freshness at a glance",
-              "ios": {
-                "supportedFamilies": ["systemSmall", "systemMedium"]
-              }
-            }
-          ]
-        }
       ]
     ],
     "experiments": {
