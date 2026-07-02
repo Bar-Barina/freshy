@@ -1,0 +1,32 @@
+---
+description: Code quality standards - naming, styling, architecture
+alwaysApply: true
+---
+
+# Code Quality Rules
+
+## File Naming
+
+- Use consistent casing: `camelCase` for files exporting functions/hooks, `PascalCase` for components.
+- Group by feature: `src/features/<name>/`, `src/components/`, `src/services/`.
+- Test files mirror source: `__tests__/<filename>.test.ts`.
+
+## Styling
+
+- Use theme tokens exclusively. No inline hex colors, magic numbers, or hardcoded spacing.
+- Colors: import from `@/theme` (e.g., `Colors.primary`, `Colors.background`).
+- Spacing: use `Spacing.sm`, `Spacing.md`, etc.
+- Typography: use `Typography.heading`, `Typography.body`, etc.
+- If Tailwind/NativeWind is adopted later, same principle: semantic classes only, no arbitrary values.
+
+## TypeScript
+
+- Zero `any` in `src/`. Use `unknown` + type guards when the type is truly dynamic.
+- Every async function must have error handling (try/catch or .catch).
+- No unused imports or variables (`noUnusedLocals`, `noUnusedParameters`).
+
+## Architecture
+
+- Local-first: render from MMKV immediately, then sync.
+- No hardcoded secrets in source. Use `.env` + `expo-constants`.
+- One concern per file. If a file exceeds ~200 lines, consider splitting.

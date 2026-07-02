@@ -1,0 +1,30 @@
+---
+description: Core workflow rules - planning, commits, context management, spending
+alwaysApply: true
+---
+
+# Workflow Rules
+
+## Planning & Communication
+
+- Always plan carefully before making changes. Ask clarifying questions when context is missing or ambiguous.
+- Never commit until Bar explicitly approves. Stage changes and present a summary first.
+- This project is for **getting production-ready fast** and also for **learning**. Explain decisions when they teach something new.
+
+## Context & Handoff
+
+- At the start of every session, read `docs/HANDOFF.md`, `docs/ARCHITECTURE.md`, and `docs/RISKS.md`.
+- When reaching ~80% of the context window, stop and update `docs/HANDOFF.md` with full context for a new agent session.
+- Include: current branch, completed work, pending tasks, blockers, key decisions made, and next steps.
+
+## Git Workflow
+
+- Always work on feature branches. Never commit directly to `main` or `develop`.
+- Branch naming: `phase/<name>`, `fix/<name>`, `feat/<name>`.
+- Keep commits atomic and well-described.
+
+## Spending & Safety
+
+- Never exceed Cursor usage limits. If a task requires many iterations, pause and check with Bar.
+- Never make major refactors unless you are certain of the outcome. When in doubt, ask first.
+- Prefer small, incremental changes over large rewrites.

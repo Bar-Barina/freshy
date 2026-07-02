@@ -1,4 +1,4 @@
-﻿{
+{
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
@@ -8,7 +8,9 @@
     "noUnusedParameters": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     },
     "ignoreDeprecations": "6.0"
   },
@@ -16,7 +18,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.d.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    ".expo/types/**/*.ts"
   ],
   "exclude": [
     "__tests__",
