@@ -20,6 +20,8 @@ export interface Bed {
   /** ISO 8601 datetime string, or null if sheets have never been changed */
   lastChangedAt: string | null;
   preferredChangeIntervalDays: number;
+  /** Consecutive on-time sheet changes. Resets if interval is exceeded. */
+  streak: number;
   events: BedEvent[];
   createdAt: string;
   updatedAt: string;

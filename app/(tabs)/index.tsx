@@ -2,15 +2,18 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { Plus, Share2, Users } from 'lucide-react-native';
+import { Plus, Share2, Users, Flame } from 'lucide-react-native';
 import { Colors, Typography, Spacing, BorderRadius, Shadow, getBandColor } from '@/theme';
 import { useBed } from '@/features/bed/useBed';
+import { useSettings } from '@/features/settings/useSettings';
 import { BedIllustration } from '@/components/BedIllustration';
 import { ScoreRing } from '@/components/ScoreRing';
 import { CelebrationOverlay } from '@/components/CelebrationOverlay';
+import { getMotivationalLine } from '@/content/motivationalCopy';
 
 export default function HomeScreen() {
   const { bed, status, markSheetsChanged } = useBed();
+  const { settings } = useSettings();
   const [celebrating, setCelebrating] = useState(false);
 
   const handleChanged = async () => {
@@ -20,6 +23,10 @@ export default function HomeScreen() {
   };
 
   const bandColor = getBandColor(status.band);
+  const motivational = getMotivationalLine(status.band, {
+    gender: settings.gender,
+    hasPartner: settings.sharesBed,
+  });
   const dayLabel =
     status.daysSinceChange < 0
       ? 'Never tracked'
@@ -40,8 +47,17 @@ export default function HomeScreen() {
       >
         {/* ── Header ──────────────────────────────────────────────── */}
         <View style={styles.header}>
-          <Text style={styles.appTitle}>Bed Status</Text>
-          <Text style={styles.bedName}>{bed.name}</Text>
+          <View style={styles.headerTop}>
+            <Text style={styles.appTitle}>{bed.name}</Text>
+            {bed.streak > 1 && (
+              <View style={styles.streakBadge}>
+                <Flame color={Colors.accent} size={14} strokeWidth={2.2} />
+                <Text style={styles.streakText}>{bed.streak}</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.motivationalHeadline}>{motivational.headline}</Text>
+          <Text style={styles.motivationalSubtext}>{motivational.subtext}</Text>
         </View>
 
         {/* ── Main card ───────────────────────────────────────────── */}
@@ -126,13 +142,35 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xl,
     gap: Spacing.xs,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   appTitle: {
     ...Typography.labelSM,
     color: Colors.textMuted,
   },
-  bedName: {
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.accentLight,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.lg,
+  },
+  streakText: {
+    ...Typography.labelMD,
+    color: Colors.accent,
+  },
+  motivationalHeadline: {
     ...Typography.h2,
     color: Colors.textPrimary,
+  },
+  motivationalSubtext: {
+    ...Typography.bodyMD,
+    color: Colors.textSecondary,
   },
   scoreCard: {
     backgroundColor: Colors.surface,

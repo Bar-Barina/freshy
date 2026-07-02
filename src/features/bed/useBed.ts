@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { Bed, BedEvent, FreshnessStatus, BedEventType } from '@/types';
 import { calculateFreshness, DEFAULT_EVENT_PENALTIES } from '@/utils/freshnessCalculator';
 import { loadBed, saveBed, createDefaultBed } from './bedStore';
@@ -48,13 +49,24 @@ export function useBed(): UseBedReturn {
   }, [settings.defaultIntervalDays]);
 
   const markSheetsChanged = useCallback(() => {
-    const now = new Date().toISOString();
-    updateAndPersist((prev) => ({
-      ...prev,
-      lastChangedAt: now,
-      updatedAt: now,
-      lastChangedByName: undefined,
-    }));
+    const now = new Date();
+    const nowISO = now.toISOString();
+    updateAndPersist((prev) => {
+      let nextStreak = 1;
+      if (prev.lastChangedAt) {
+        const daysSinceLast = differenceInCalendarDays(now, parseISO(prev.lastChangedAt));
+        nextStreak = daysSinceLast <= prev.preferredChangeIntervalDays
+          ? prev.streak + 1
+          : 1;
+      }
+      return {
+        ...prev,
+        lastChangedAt: nowISO,
+        updatedAt: nowISO,
+        streak: nextStreak,
+        lastChangedByName: undefined,
+      };
+    });
   }, [updateAndPersist]);
 
   const addEvent = useCallback(

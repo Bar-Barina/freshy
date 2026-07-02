@@ -7,6 +7,7 @@ const EMPTY_BED: Bed = {
   name: 'My Bed',
   lastChangedAt: null,
   preferredChangeIntervalDays: 7,
+  streak: 0,
   events: [],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -30,6 +31,8 @@ export function deserializeBed(raw: unknown): Bed {
       obj.preferredChangeIntervalDays > 0
         ? obj.preferredChangeIntervalDays
         : EMPTY_BED.preferredChangeIntervalDays,
+    streak:
+      typeof obj.streak === 'number' && obj.streak >= 0 ? obj.streak : 0,
     events: Array.isArray(obj.events)
       ? obj.events.map(deserializeBedEvent).filter((e): e is BedEvent => e !== null)
       : [],

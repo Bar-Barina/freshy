@@ -19,6 +19,7 @@ export function createDefaultBed(intervalDays: number = 7): Bed {
     name: 'My Bed',
     lastChangedAt: null,
     preferredChangeIntervalDays: intervalDays,
+    streak: 0,
     events: [],
     createdAt: now,
     updatedAt: now,
