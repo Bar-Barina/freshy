@@ -177,10 +177,14 @@ docs/                   RESEARCH.md, ARCHITECTURE.md, RISKS.md
 ## Git Workflow
 
 ```
-main          release tags (v0.1.0)
-develop       integration branch — all phases merge here
+main          protected default branch — PRs merge here
 phase/*       one branch per implementation phase
+fix/*         bugfix branches
+feat/*        feature branches
 ```
+
+Each phase: feature branch → PR into `main`. Squash merge with conventional commit message.
+Tag releases on `main` (e.g. `v0.1.0`).
 
 Conventional commits: feat:, fix:, test:, chore:, docs:, refactor:
 

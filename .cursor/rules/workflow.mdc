@@ -19,7 +19,7 @@ alwaysApply: true
 
 ## Git Workflow
 
-- Always work on feature branches. Never commit directly to `main` or `develop`.
+- Always work on feature branches. Never commit directly to `main`.
 - Branch naming: `phase/<name>`, `fix/<name>`, `feat/<name>`.
 - Keep commits atomic and well-described.
 

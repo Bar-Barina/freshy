@@ -2,14 +2,28 @@
 
 > This file is updated at the end of every agent session.
 > New agents: read this file first, then ARCHITECTURE.md and RISKS.md.
-> Last updated: 2026-07-02
+> Last updated: 2026-07-03
 
 ---
 
 ## Current Branch
 
-`phase/3-main-ui` (active development branch)
-PR open: https://github.com/Bar-Barina/freshy/pull/1
+`main` — Phase 3 work merged. Branch from here for all new work.
+
+Merged PRs: [#1](https://github.com/Bar-Barina/freshy/pull/1) (Phase 3 features), [#2](https://github.com/Bar-Barina/freshy/pull/2) (sync main).
+
+---
+
+## Git Workflow
+
+```
+feature branch → PR → main
+```
+
+- Default branch: `main`
+- Branch naming: `phase/*`, `feat/*`, `fix/*`
+- Never commit directly to `main`
+- Tag releases on `main` (e.g. `v0.1.0`)
 
 ---
 
@@ -34,9 +48,7 @@ Types, storage, utilities, features, tests — all complete.
 
 Navigation skeleton with placeholder screens in place.
 
-### Phase 3 — Main UI (DONE — code complete, PR open)
-
-Branch: `phase/3-main-ui`
+### Phase 3 — Main UI (DONE, merged to main)
 
 New files:
 - `src/components/BedIllustration.tsx` — SVG bed illustration, 5 freshness states
