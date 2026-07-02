@@ -1,29 +1,12 @@
 import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Home, ClipboardList, Share2, Settings } from 'lucide-react-native';
 import { Colors, Spacing } from '@/theme';
-
-function TabIcon({ focused, label }: { focused: boolean; label: string }) {
-  const icons: Record<string, string> = {
-    Home: focused ? '🏠' : '🏡',
-    History: focused ? '📋' : '📄',
-    Settings: focused ? '⚙️' : '🔧',
-  };
-  return (
-    <View style={styles.tabIcon}>
-      <View style={[styles.tabIconInner, focused && styles.tabIconInnerFocused]}>
-        <View style={styles.iconEmoji}>
-          <View
-            accessibilityLabel={`${label} tab${focused ? ', selected' : ''}`}
-            accessibilityRole="tab"
-          >
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-}
+import { useNotificationBootstrap } from '@/hooks/useNotificationBootstrap';
 
 export default function TabsLayout() {
+  useNotificationBootstrap();
+
   return (
     <Tabs
       screenOptions={{
@@ -31,32 +14,37 @@ export default function TabsLayout() {
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: Colors.accent,
         tabBarInactiveTintColor: Colors.textMuted,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          marginBottom: 4,
-        },
+        tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} label="Home" />,
+          tabBarIcon: ({ color, size }) => <Home color={color} size={size} strokeWidth={1.8} />,
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
           title: 'History',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} label="History" />,
+          tabBarIcon: ({ color, size }) => (
+            <ClipboardList color={color} size={size} strokeWidth={1.8} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="share"
+        options={{
+          title: 'Share',
+          tabBarIcon: ({ color, size }) => <Share2 color={color} size={size} strokeWidth={1.8} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} label="Settings" />,
+          tabBarIcon: ({ color, size }) => <Settings color={color} size={size} strokeWidth={1.8} />,
         }}
       />
     </Tabs>
@@ -71,22 +59,9 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.sm,
     height: 84,
   },
-  tabIcon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabIconInner: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabIconInnerFocused: {
-    backgroundColor: Colors.accentLight,
-  },
-  iconEmoji: {
-    width: 20,
-    height: 20,
+  tabBarLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 4,
   },
 });

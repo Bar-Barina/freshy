@@ -2,20 +2,25 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Typography, Spacing, BorderRadius } from '@/theme';
+import { BedIllustration } from '@/components/BedIllustration';
+import { OnboardingProgress } from '@/components/OnboardingProgress';
 
 export default function WelcomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
+      <OnboardingProgress step={1} totalSteps={3} />
       <View style={styles.content}>
-        {/* Placeholder illustration — replaced in Phase 3 */}
-        <View style={styles.illustrationPlaceholder}>
-          <Text style={styles.illustrationEmoji}>🛏️</Text>
+        <View style={styles.illustrationContainer}>
+          <BedIllustration band="fresh" size={200} />
         </View>
 
         <View style={styles.textBlock}>
           <Text style={styles.title}>Meet your bed.</Text>
           <Text style={styles.subtitle}>
             Freshy tracks how fresh your sheets are — just for fun.
+          </Text>
+          <Text style={styles.subtitleSecondary}>
+            No judgement, we promise.
           </Text>
           <Text style={styles.disclaimer}>
             Fun reminder tool only. Not medical or hygiene advice.
@@ -25,12 +30,12 @@ export default function WelcomeScreen() {
 
       <View style={styles.footer}>
         <Pressable
-          style={styles.primaryButton}
+          style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryButtonPressed]}
           onPress={() => router.push('/(onboarding)/preferences')}
           accessibilityRole="button"
           accessibilityLabel="Get started"
         >
-          <Text style={styles.primaryButtonText}>Get started</Text>
+          <Text style={styles.primaryButtonText}>{"Let\u2019s go"}</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -48,17 +53,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: Spacing.xl,
   },
-  illustrationPlaceholder: {
-    width: 180,
-    height: 180,
-    borderRadius: BorderRadius.xxl,
-    backgroundColor: Colors.freshLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+  illustrationContainer: {
     marginBottom: Spacing.xxxl,
-  },
-  illustrationEmoji: {
-    fontSize: 80,
   },
   textBlock: {
     alignItems: 'center',
@@ -75,6 +71,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     maxWidth: 280,
   },
+  subtitleSecondary: {
+    ...Typography.bodyMD,
+    color: Colors.textMuted,
+    textAlign: 'center',
+  },
   disclaimer: {
     ...Typography.caption,
     color: Colors.textMuted,
@@ -86,10 +87,13 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
   },
   primaryButton: {
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.cta,
     borderRadius: BorderRadius.xxl,
     paddingVertical: Spacing.lg,
     alignItems: 'center',
+  },
+  primaryButtonPressed: {
+    backgroundColor: Colors.ctaPressed,
   },
   primaryButtonText: {
     ...Typography.labelLG,

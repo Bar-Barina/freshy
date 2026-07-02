@@ -25,6 +25,10 @@ export const Colors = {
   biohazard: '#C77DFF',
   biohazardLight: '#F5E8FF',
 
+  // CTA
+  cta: '#34A853',
+  ctaPressed: '#2D9048',
+
   // UI
   white: '#FFFFFF',
   black: '#000000',

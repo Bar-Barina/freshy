@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
-import { Bed, BedEvent, FreshnessStatus, FreshnessBand } from '@/types';
+import { Bed, BedOops, FreshnessStatus, FreshnessBand } from '@/types';
 
 // ─── Status bands ─────────────────────────────────────────────────────────────
 
@@ -22,13 +22,6 @@ const BANDS: BandDefinition[] = [
 /**
  * Pure function — accepts `now` explicitly for deterministic testing.
  * Never calls new Date() internally.
- *
- * Formula:
- *   dailyDecay    = 100 / preferredChangeIntervalDays
- *   daysSince     = whole calendar days between lastChangedAt and now (local tz)
- *   baseScore     = 100 - (daysSince * dailyDecay)
- *   eventPenalty  = sum of penalties for events after lastChangedAt
- *   score         = clamp(baseScore - eventPenalty, 0, 100)
  */
 export function calculateFreshness(bed: Bed, now: Date): FreshnessStatus {
   if (bed.lastChangedAt === null) {
@@ -46,26 +39,26 @@ export function calculateFreshness(bed: Bed, now: Date): FreshnessStatus {
   const dailyDecayRate = 100 / bed.preferredChangeIntervalDays;
   const baseScore = 100 - daysSinceChange * dailyDecayRate;
 
-  const eventPenalty = sumEventPenalties(bed.events, bed.lastChangedAt);
+  const oopsPenalty = sumOopsPenalties(bed.oops, bed.lastChangedAt);
 
-  const score = clamp(baseScore - eventPenalty, 0, 100);
+  const score = clamp(baseScore - oopsPenalty, 0, 100);
   const { band, label } = getStatusBand(score);
 
   return { score, band, label, daysSinceChange };
 }
 
-// ─── Event penalties ──────────────────────────────────────────────────────────
+// ─── Oops penalties ───────────────────────────────────────────────────────────
 
 /**
- * Sums penalties for events that occurred AFTER lastChangedAt.
- * Events before the last sheet change are ignored — they've been "washed away".
+ * Sums penalties for oops logged AFTER lastChangedAt.
+ * Oops before the last sheet change are ignored — they've been "washed away".
  */
-export function sumEventPenalties(events: BedEvent[], lastChangedAt: string): number {
+export function sumOopsPenalties(oops: BedOops[], lastChangedAt: string): number {
   const cutoff = parseISO(lastChangedAt);
-  return events.reduce((total, event) => {
-    const eventDate = parseISO(event.createdAt);
-    if (eventDate > cutoff) {
-      return total + event.penalty;
+  return oops.reduce((total, item) => {
+    const oopsDate = parseISO(item.createdAt);
+    if (oopsDate > cutoff) {
+      return total + item.penalty;
     }
     return total;
   }, 0);
@@ -80,7 +73,6 @@ export function getStatusBand(score: number): { band: FreshnessBand; label: stri
       return { band: def.band, label: def.label };
     }
   }
-  // Fallback — should not reach here given BANDS covers 0
   return { band: 'biohazard', label: 'I have seen things' };
 }
 
@@ -90,17 +82,13 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-/**
- * Whole calendar days between two dates in local timezone.
- * Handles DST by using date-fns differenceInCalendarDays.
- */
 export function wholeDaysBetween(from: Date, to: Date): number {
   return differenceInCalendarDays(to, from);
 }
 
-// ─── Default event penalties ──────────────────────────────────────────────────
+// ─── Default oops penalties ───────────────────────────────────────────────────
 
-export const DEFAULT_EVENT_PENALTIES: Record<string, number> = {
+export const DEFAULT_OOPS_PENALTIES: Record<string, number> = {
   pet: 5,
   sweaty: 8,
   sick: 12,

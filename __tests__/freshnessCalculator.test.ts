@@ -1,5 +1,5 @@
-import { calculateFreshness, getStatusBand, sumEventPenalties, clamp } from '../src/utils/freshnessCalculator';
-import { Bed, BedEvent } from '../src/types';
+import { calculateFreshness, getStatusBand, sumOopsPenalties, clamp } from '../src/utils/freshnessCalculator';
+import { Bed, BedOops } from '../src/types';
 
 // ─── Test helpers ─────────────────────────────────────────────────────────────
 
@@ -15,7 +15,7 @@ function makeBed(overrides: Partial<Bed> = {}): Bed {
     name: 'Test Bed',
     lastChangedAt: makeDate(0),
     preferredChangeIntervalDays: 7,
-    events: [],
+    oops: [],
     createdAt: makeDate(0),
     updatedAt: makeDate(0),
     sharedWith: [],
@@ -23,11 +23,11 @@ function makeBed(overrides: Partial<Bed> = {}): Bed {
   };
 }
 
-function makeEvent(daysAgo: number, penalty: number): BedEvent {
+function makeOops(daysAgo: number, penalty: number): BedOops {
   return {
-    id: `event-${daysAgo}`,
+    id: `oops-${daysAgo}`,
     type: 'custom',
-    label: 'Test event',
+    label: 'Test oops',
     penalty,
     createdAt: makeDate(daysAgo),
   };
@@ -38,7 +38,7 @@ const NOW = new Date('2024-06-15T12:00:00.000Z');
 // ─── calculateFreshness ───────────────────────────────────────────────────────
 
 describe('calculateFreshness', () => {
-  it('returns score 100 when changed today with no events', () => {
+  it('returns score 100 when changed today with no oops', () => {
     const bed = makeBed({ lastChangedAt: NOW.toISOString() });
     const result = calculateFreshness(bed, NOW);
     expect(result.score).toBe(100);
@@ -88,58 +88,58 @@ describe('calculateFreshness', () => {
     const bed = makeBed({
       lastChangedAt: NOW.toISOString(),
       preferredChangeIntervalDays: 7,
-      events: [],
+      oops: [],
     });
     const result = calculateFreshness(bed, NOW);
     expect(result.score).toBeLessThanOrEqual(100);
   });
 
-  it('subtracts event penalties from score', () => {
+  it('subtracts oops penalties from score', () => {
     const yesterday = new Date(NOW.getTime() - DAY_MS);
-    const event: BedEvent = {
-      id: 'ev1',
+    const oops: BedOops = {
+      id: 'oops1',
       type: 'sick',
       label: 'Sick day',
       penalty: 12,
-      createdAt: NOW.toISOString(), // event happened today
+      createdAt: NOW.toISOString(),
     };
     const bed = makeBed({
       lastChangedAt: yesterday.toISOString(),
-      events: [event],
+      oops: [oops],
     });
     const result = calculateFreshness(bed, NOW);
     // 1 day decay = 100/7 ≈ 14.28; minus 12 penalty ≈ 73.7
     expect(result.score).toBeCloseTo(100 - 100 / 7 - 12, 0);
   });
 
-  it('ignores events that happened before lastChangedAt', () => {
+  it('ignores oops that happened before lastChangedAt', () => {
     const threeDaysAgo = new Date(NOW.getTime() - 3 * DAY_MS);
     const fiveDaysAgo = new Date(NOW.getTime() - 5 * DAY_MS);
-    const event: BedEvent = {
-      id: 'old-event',
+    const oops: BedOops = {
+      id: 'old-oops',
       type: 'pet',
       label: 'Pet',
       penalty: 5,
-      createdAt: fiveDaysAgo.toISOString(), // before lastChangedAt
+      createdAt: fiveDaysAgo.toISOString(),
     };
     const bed = makeBed({
       lastChangedAt: threeDaysAgo.toISOString(),
-      events: [event],
+      oops: [oops],
     });
-    const resultWithOldEvent = calculateFreshness(bed, NOW);
-    const bedNoEvents = makeBed({ lastChangedAt: threeDaysAgo.toISOString() });
-    const resultNoEvents = calculateFreshness(bedNoEvents, NOW);
-    expect(resultWithOldEvent.score).toBe(resultNoEvents.score);
+    const resultWithOldOops = calculateFreshness(bed, NOW);
+    const bedNoOops = makeBed({ lastChangedAt: threeDaysAgo.toISOString() });
+    const resultNoOops = calculateFreshness(bedNoOops, NOW);
+    expect(resultWithOldOops.score).toBe(resultNoOops.score);
   });
 
-  it('accumulates multiple event penalties', () => {
+  it('accumulates multiple oops penalties', () => {
     const yesterday = new Date(NOW.getTime() - DAY_MS);
-    const events: BedEvent[] = [
+    const oops: BedOops[] = [
       { id: '1', type: 'pet', label: 'Pet', penalty: 5, createdAt: NOW.toISOString() },
       { id: '2', type: 'sweaty', label: 'Sweaty', penalty: 8, createdAt: NOW.toISOString() },
       { id: '3', type: 'sick', label: 'Sick', penalty: 12, createdAt: NOW.toISOString() },
     ];
-    const bed = makeBed({ lastChangedAt: yesterday.toISOString(), events });
+    const bed = makeBed({ lastChangedAt: yesterday.toISOString(), oops });
     const result = calculateFreshness(bed, NOW);
     const expected = 100 - 100 / 7 - (5 + 8 + 12);
     expect(result.score).toBeCloseTo(Math.max(0, expected), 0);
@@ -171,28 +171,28 @@ describe('getStatusBand', () => {
   });
 });
 
-// ─── sumEventPenalties ────────────────────────────────────────────────────────
+// ─── sumOopsPenalties ─────────────────────────────────────────────────────────
 
-describe('sumEventPenalties', () => {
-  it('returns 0 for empty events array', () => {
-    expect(sumEventPenalties([], NOW.toISOString())).toBe(0);
+describe('sumOopsPenalties', () => {
+  it('returns 0 for empty oops array', () => {
+    expect(sumOopsPenalties([], NOW.toISOString())).toBe(0);
   });
 
-  it('sums penalties for events after lastChangedAt', () => {
+  it('sums penalties for oops after lastChangedAt', () => {
     const afterNow = new Date(NOW.getTime() + DAY_MS);
-    const events: BedEvent[] = [
+    const oops: BedOops[] = [
       { id: '1', type: 'pet', label: 'Pet', penalty: 5, createdAt: afterNow.toISOString() },
       { id: '2', type: 'sweaty', label: 'Sweaty', penalty: 8, createdAt: afterNow.toISOString() },
     ];
-    expect(sumEventPenalties(events, NOW.toISOString())).toBe(13);
+    expect(sumOopsPenalties(oops, NOW.toISOString())).toBe(13);
   });
 
-  it('ignores events before lastChangedAt', () => {
+  it('ignores oops before lastChangedAt', () => {
     const beforeNow = new Date(NOW.getTime() - DAY_MS);
-    const events: BedEvent[] = [
+    const oops: BedOops[] = [
       { id: '1', type: 'pet', label: 'Pet', penalty: 5, createdAt: beforeNow.toISOString() },
     ];
-    expect(sumEventPenalties(events, NOW.toISOString())).toBe(0);
+    expect(sumOopsPenalties(oops, NOW.toISOString())).toBe(0);
   });
 });
 
@@ -230,16 +230,16 @@ describe('wholeDaysBetween', () => {
   });
 });
 
-// ─── DEFAULT_EVENT_PENALTIES ──────────────────────────────────────────────────
+// ─── DEFAULT_OOPS_PENALTIES ───────────────────────────────────────────────────
 
-describe('DEFAULT_EVENT_PENALTIES', () => {
-  it('has penalty entries for all standard event types', () => {
-    const { DEFAULT_EVENT_PENALTIES } = require('../src/utils/freshnessCalculator');
-    expect(DEFAULT_EVENT_PENALTIES['pet']).toBe(5);
-    expect(DEFAULT_EVENT_PENALTIES['sweaty']).toBe(8);
-    expect(DEFAULT_EVENT_PENALTIES['sick']).toBe(12);
-    expect(DEFAULT_EVENT_PENALTIES['ate_in_bed']).toBe(6);
-    expect(DEFAULT_EVENT_PENALTIES['guest']).toBe(7);
-    expect(DEFAULT_EVENT_PENALTIES['skipped_shower']).toBe(5);
+describe('DEFAULT_OOPS_PENALTIES', () => {
+  it('has penalty entries for all standard oops types', () => {
+    const { DEFAULT_OOPS_PENALTIES } = require('../src/utils/freshnessCalculator');
+    expect(DEFAULT_OOPS_PENALTIES['pet']).toBe(5);
+    expect(DEFAULT_OOPS_PENALTIES['sweaty']).toBe(8);
+    expect(DEFAULT_OOPS_PENALTIES['sick']).toBe(12);
+    expect(DEFAULT_OOPS_PENALTIES['ate_in_bed']).toBe(6);
+    expect(DEFAULT_OOPS_PENALTIES['guest']).toBe(7);
+    expect(DEFAULT_OOPS_PENALTIES['skipped_shower']).toBe(5);
   });
 });

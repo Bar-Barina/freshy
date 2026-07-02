@@ -1,9 +1,13 @@
 import { View, Text, StyleSheet, SectionList, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { format, parseISO } from 'date-fns';
+import { Swipeable } from 'react-native-gesture-handler';
+import { format, parseISO, isToday, isYesterday } from 'date-fns';
+import { Sparkles, Trash2, ClipboardList } from 'lucide-react-native';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '@/theme';
 import { useBed } from '@/features/bed/useBed';
-import { BedEvent } from '@/types';
+import { getActiveOops } from '@/utils/oopsUtils';
+import { OOPS_PRESETS } from '@/content/oopsPresets';
+import type { BedOops, BedOopsType } from '@/types';
 
 interface HistorySection {
   title: string;
@@ -12,28 +16,38 @@ interface HistorySection {
 
 interface HistoryItem {
   id: string;
-  type: 'sheet_change' | 'event';
+  type: 'sheet_change' | 'oops';
   label: string;
   time: string;
+  sortKey: string;
   penalty?: number;
-  eventId?: string;
+  oopsId?: string;
+  oopsType?: BedOopsType;
 }
 
-export default function HistoryScreen() {
-  const { bed, deleteEvent } = useBed();
+const OOPS_ICON_MAP = Object.fromEntries(
+  OOPS_PRESETS.map((p) => [p.type, p.icon])
+) as Record<BedOopsType, (typeof OOPS_PRESETS)[0]['icon']>;
 
-  const sections = buildSections(bed.lastChangedAt, bed.events);
+export default function HistoryScreen() {
+  const { bed, deleteOops } = useBed();
+  const activeOops = getActiveOops(bed);
+  const sections = buildSections(bed.lastChangedAt, activeOops);
 
   const handleDelete = (item: HistoryItem) => {
-    if (!item.eventId) return;
-    Alert.alert('Remove event?', `"${item.label}" will be removed and your score will update.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => deleteEvent(item.eventId!),
-      },
-    ]);
+    if (!item.oopsId) return;
+    Alert.alert(
+      'Remove this oops?',
+      `"${item.label}" will be removed and your score goes back up.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => deleteOops(item.oopsId!),
+        },
+      ]
+    );
   };
 
   if (sections.length === 0) {
@@ -43,10 +57,10 @@ export default function HistoryScreen() {
           <Text style={styles.title}>History</Text>
         </View>
         <View style={styles.empty}>
-          <Text style={styles.emptyEmoji}>📋</Text>
-          <Text style={styles.emptyTitle}>Nothing here yet</Text>
+          <ClipboardList color={Colors.textMuted} size={48} strokeWidth={1.4} />
+          <Text style={styles.emptyTitle}>All quiet here</Text>
           <Text style={styles.emptySubtitle}>
-            Your sheet changes and events will appear here.
+            Sheet changes and oops moments show up once you start tracking.
           </Text>
         </View>
       </SafeAreaView>
@@ -61,13 +75,14 @@ export default function HistoryScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={styles.title}>History</Text>
+            <Text style={styles.headerHint}>Only this sheet cycle — old oops were washed away.</Text>
           </View>
         }
         renderSectionHeader={({ section }) => (
           <Text style={styles.sectionHeader}>{section.title}</Text>
         )}
         renderItem={({ item }) => (
-          <HistoryRow item={item} onDelete={item.type === 'event' ? handleDelete : undefined} />
+          <HistoryRow item={item} onDelete={item.type === 'oops' ? handleDelete : undefined} />
         )}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -84,37 +99,60 @@ function HistoryRow({
   item: HistoryItem;
   onDelete?: (item: HistoryItem) => void;
 }) {
-  return (
+  const OopsIcon =
+    item.oopsType !== undefined ? OOPS_ICON_MAP[item.oopsType] : undefined;
+
+  const row = (
     <View style={[styles.row, Shadow.sm]}>
       <View style={styles.rowIcon}>
-        <Text style={styles.rowEmoji}>
-          {item.type === 'sheet_change' ? '🧺' : '📌'}
-        </Text>
+        {item.type === 'sheet_change' ? (
+          <Sparkles color={Colors.fresh} size={20} strokeWidth={1.8} />
+        ) : OopsIcon !== undefined ? (
+          <OopsIcon color={Colors.accent} size={20} strokeWidth={1.8} />
+        ) : null}
       </View>
       <View style={styles.rowContent}>
         <Text style={styles.rowLabel}>{item.label}</Text>
         <Text style={styles.rowTime}>{item.time}</Text>
       </View>
       {item.penalty !== undefined && (
-        <Text style={styles.penalty}>-{item.penalty}</Text>
-      )}
-      {onDelete && (
-        <Pressable
-          style={styles.deleteButton}
-          onPress={() => onDelete(item)}
-          accessibilityRole="button"
-          accessibilityLabel={`Remove ${item.label}`}
-        >
-          <Text style={styles.deleteText}>✕</Text>
-        </Pressable>
+        <Text style={styles.penalty}>-{item.penalty}%</Text>
       )}
     </View>
   );
+
+  if (!onDelete) {
+    return row;
+  }
+
+  const renderRightActions = () => (
+    <Pressable
+      style={styles.swipeDelete}
+      onPress={() => onDelete(item)}
+      accessibilityRole="button"
+      accessibilityLabel={`Remove ${item.label}`}
+    >
+      <Trash2 color={Colors.white} size={20} strokeWidth={2} />
+    </Pressable>
+  );
+
+  return (
+    <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
+      {row}
+    </Swipeable>
+  );
+}
+
+function formatSectionTitle(isoDate: string): string {
+  const date = parseISO(isoDate);
+  if (isToday(date)) return 'Today';
+  if (isYesterday(date)) return 'Yesterday';
+  return format(date, 'MMMM d');
 }
 
 function buildSections(
   lastChangedAt: string | null,
-  events: BedEvent[]
+  activeOops: BedOops[]
 ): HistorySection[] {
   const items: HistoryItem[] = [];
 
@@ -122,32 +160,50 @@ function buildSections(
     items.push({
       id: `change-${lastChangedAt}`,
       type: 'sheet_change',
-      label: 'Changed the sheets',
+      label: 'Sheets changed!',
       time: format(parseISO(lastChangedAt), 'h:mm a'),
+      sortKey: lastChangedAt,
     });
   }
 
-  for (const event of events) {
+  for (const oops of activeOops) {
     items.push({
-      id: event.id,
-      type: 'event',
-      label: event.label,
-      time: format(parseISO(event.createdAt), 'h:mm a'),
-      penalty: event.penalty,
-      eventId: event.id,
+      id: oops.id,
+      type: 'oops',
+      label: oops.label,
+      time: format(parseISO(oops.createdAt), 'h:mm a'),
+      sortKey: oops.createdAt,
+      penalty: oops.penalty,
+      oopsId: oops.id,
+      oopsType: oops.type,
     });
   }
 
   if (items.length === 0) return [];
 
-  // Group by date — simplified: all items in one "Recent" section for MVP
-  return [{ title: 'Recent', data: items }];
+  items.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+
+  const grouped = new Map<string, HistoryItem[]>();
+  for (const item of items) {
+    const sectionTitle = formatSectionTitle(item.sortKey);
+    const existing = grouped.get(sectionTitle) ?? [];
+    existing.push(item);
+    grouped.set(sectionTitle, existing);
+  }
+
+  return Array.from(grouped.entries()).map(([title, data]) => ({ title, data }));
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl, paddingBottom: Spacing.lg },
+  header: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.lg,
+    gap: Spacing.xs,
+  },
   title: { ...Typography.h2, color: Colors.textPrimary },
+  headerHint: { ...Typography.caption, color: Colors.textMuted },
   listContent: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xxxl },
   sectionHeader: {
     ...Typography.labelSM,
@@ -172,21 +228,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowEmoji: { fontSize: 20 },
   rowContent: { flex: 1 },
   rowLabel: { ...Typography.bodyMD, color: Colors.textPrimary },
   rowTime: { ...Typography.caption, color: Colors.textMuted },
   penalty: { ...Typography.labelMD, color: Colors.warning },
-  deleteButton: {
-    width: 32,
-    height: 32,
-    borderRadius: BorderRadius.full,
-    alignItems: 'center',
+  swipeDelete: {
+    backgroundColor: Colors.warning,
     justifyContent: 'center',
-    minWidth: 44,
-    minHeight: 44,
+    alignItems: 'center',
+    width: 72,
+    borderRadius: BorderRadius.xl,
+    marginBottom: Spacing.sm,
+    marginLeft: Spacing.sm,
   },
-  deleteText: { ...Typography.labelMD, color: Colors.textMuted },
   empty: {
     flex: 1,
     alignItems: 'center',
@@ -194,7 +248,6 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     paddingHorizontal: Spacing.xl,
   },
-  emptyEmoji: { fontSize: 48 },
   emptyTitle: { ...Typography.h3, color: Colors.textPrimary },
   emptySubtitle: { ...Typography.bodyMD, color: Colors.textMuted, textAlign: 'center' },
 });

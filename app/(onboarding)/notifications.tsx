@@ -3,9 +3,11 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ExpoNotifications from 'expo-notifications';
+import { Bell, ChevronLeft } from 'lucide-react-native';
 import { Colors, Typography, Spacing, BorderRadius } from '@/theme';
 import { useSettings } from '@/features/settings/useSettings';
 import { useBed } from '@/features/bed/useBed';
+import { OnboardingProgress } from '@/components/OnboardingProgress';
 
 export default function NotificationsScreen() {
   const { updateSettings } = useSettings();
@@ -36,15 +38,26 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <OnboardingProgress step={3} totalSteps={3} />
+      <Pressable
+        style={styles.backButton}
+        onPress={() => router.back()}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+      >
+        <ChevronLeft color={Colors.textSecondary} size={24} strokeWidth={2} />
+      </Pressable>
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <Text style={styles.icon}>🔔</Text>
+          <Bell color={Colors.soon} size={40} strokeWidth={1.6} />
         </View>
 
         <Text style={styles.title}>Stay on top of it</Text>
         <Text style={styles.subtitle}>
-          Freshy can remind you when your estimated freshness gets low. No spam — just a gentle
-          nudge.
+          Freshy can remind you when your estimated freshness gets low.
+        </Text>
+        <Text style={styles.subtitleNote}>
+          No spam — just a gentle nudge.
         </Text>
 
         <View style={styles.featureList}>
@@ -91,6 +104,14 @@ function FeatureItem({ text }: { text: string }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  backButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: Spacing.md,
+    marginTop: Spacing.xs,
+  },
   content: {
     flex: 1,
     alignItems: 'center',
@@ -106,22 +127,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: Spacing.xl,
   },
-  icon: { fontSize: 48 },
   title: { ...Typography.h2, color: Colors.textPrimary, marginBottom: Spacing.md, textAlign: 'center' },
   subtitle: {
     ...Typography.bodyMD,
     color: Colors.textSecondary,
     textAlign: 'center',
-    marginBottom: Spacing.xl,
     maxWidth: 300,
+  },
+  subtitleNote: {
+    ...Typography.bodyMD,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginBottom: Spacing.xl,
+    marginTop: Spacing.xs,
   },
   featureList: { gap: Spacing.sm, alignSelf: 'stretch', paddingHorizontal: Spacing.xl },
   featureItem: { flexDirection: 'row', gap: Spacing.sm },
-  featureDot: { ...Typography.bodyMD, color: Colors.accent },
+  featureDot: { ...Typography.bodyMD, color: Colors.cta },
   featureText: { ...Typography.bodyMD, color: Colors.textSecondary, flex: 1 },
   footer: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl, gap: Spacing.sm },
   primaryButton: {
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.cta,
     borderRadius: BorderRadius.xxl,
     paddingVertical: Spacing.lg,
     alignItems: 'center',
