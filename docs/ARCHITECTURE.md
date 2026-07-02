@@ -163,19 +163,18 @@ Service role key is never used in the mobile app.
 
 ## 9. Git Workflow
 
-main <- protected; v0.1.0 release tag only
-  develop <- integration; all phases merge here
-    phase/0-research
-    phase/1-setup
-    phase/2-bed-engine
-    phase/3-main-ui
-    phase/4-animations
-    phase/5-notifications
-    phase/6-history-events
-    phase/7-partner-sync
-    phase/8-widget
-    phase/9-polish
-    phase/10-release
+main <- protected default; all phase PRs merge here
+  phase/0-research
+  phase/1-setup
+  phase/2-bed-engine
+  phase/3-main-ui
+  phase/4-animations
+  phase/5-notifications
+  phase/6-history-events
+  phase/7-partner-sync
+  phase/8-widget
+  phase/9-polish
+  phase/10-release
 
-Each phase: one PR into develop. Squash merge with conventional commit message.
-main receives one merge commit from develop at release.
+Each phase: one PR into `main`. Squash merge with conventional commit message.
+Tag releases on `main` (e.g. `v0.1.0`).
