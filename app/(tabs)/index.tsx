@@ -1,20 +1,41 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { Plus, Share2, Users, Flame } from 'lucide-react-native';
+import { Plus, Users, Flame } from 'lucide-react-native';
 import { Colors, Typography, Spacing, BorderRadius, Shadow, getBandColor } from '@/theme';
 import { useBed } from '@/features/bed/useBed';
 import { useSettings } from '@/features/settings/useSettings';
-import { BedIllustration } from '@/components/BedIllustration';
-import { ScoreRing } from '@/components/ScoreRing';
+import { AnimatedBedIllustration } from '@/components/AnimatedBedIllustration';
+import { AnimatedScoreRing } from '@/components/AnimatedScoreRing';
+import { AnimatedScoreText } from '@/components/AnimatedScoreText';
+import { AnimatedCtaButton } from '@/components/AnimatedCtaButton';
 import { CelebrationOverlay } from '@/components/CelebrationOverlay';
+import { OopsSheet } from '@/components/OopsSheet';
 import { getMotivationalLine } from '@/content/motivationalCopy';
+import { getOopsTypesLoggedToday } from '@/utils/oopsUtils';
+import type { BedOopsType, FreshnessBand } from '@/types';
+
+const DEV_BANDS: FreshnessBand[] = ['fresh', 'ok', 'soon', 'warning', 'biohazard'];
 
 export default function HomeScreen() {
-  const { bed, status, markSheetsChanged } = useBed();
+  const { bed, status, markSheetsChanged, addOops } = useBed();
   const { settings } = useSettings();
   const [celebrating, setCelebrating] = useState(false);
+  const [previewBand, setPreviewBand] = useState<FreshnessBand | null>(null);
+  const [oopsSheetVisible, setOopsSheetVisible] = useState(false);
+
+  const displayBand = __DEV__ && previewBand !== null ? previewBand : status.band;
+  const loggedTodayTypes = getOopsTypesLoggedToday(bed);
+
+  const cyclePreviewBand = () => {
+    if (!__DEV__) return;
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPreviewBand((current) => {
+      const idx = current === null ? DEV_BANDS.indexOf(status.band) : DEV_BANDS.indexOf(current);
+      return DEV_BANDS[(idx + 1) % DEV_BANDS.length];
+    });
+  };
 
   const handleChanged = async () => {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -22,8 +43,17 @@ export default function HomeScreen() {
     setCelebrating(true);
   };
 
-  const bandColor = getBandColor(status.band);
-  const motivational = getMotivationalLine(status.band, {
+  const handleAddOops = async (type: BedOopsType, label: string) => {
+    const result = addOops(type, label);
+    if (result === 'already_today') {
+      Alert.alert('Already logged', 'You already logged that one today.');
+      return;
+    }
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  const bandColor = getBandColor(displayBand);
+  const motivational = getMotivationalLine(displayBand, {
     gender: settings.gender,
     hasPartner: settings.sharesBed,
   });
@@ -34,18 +64,22 @@ export default function HomeScreen() {
       ? 'Changed today'
       : `Day ${status.daysSinceChange}`;
 
-  const scoreText =
-    bed.lastChangedAt === null ? '—' : String(Math.round(status.score));
+  const scoreValue = bed.lastChangedAt === null ? null : Math.round(status.score);
   const showPercent = bed.lastChangedAt !== null;
 
   return (
     <SafeAreaView style={styles.container}>
       <CelebrationOverlay visible={celebrating} onFinished={() => setCelebrating(false)} />
+      <OopsSheet
+        visible={oopsSheetVisible}
+        onClose={() => setOopsSheetVisible(false)}
+        onSelect={handleAddOops}
+        loggedTodayTypes={loggedTodayTypes}
+      />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header ──────────────────────────────────────────────── */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <Text style={styles.appTitle}>{bed.name}</Text>
@@ -60,17 +94,26 @@ export default function HomeScreen() {
           <Text style={styles.motivationalSubtext}>{motivational.subtext}</Text>
         </View>
 
-        {/* ── Main card ───────────────────────────────────────────── */}
         <View style={[styles.scoreCard, Shadow.md]}>
-          {/* Score ring wraps the bed illustration */}
-          <ScoreRing score={status.score} band={status.band} size={196} strokeWidth={10}>
-            <BedIllustration band={status.band} size={162} />
-          </ScoreRing>
+          <AnimatedScoreRing score={status.score} band={displayBand} size={196} strokeWidth={10}>
+            <Pressable
+              onLongPress={cyclePreviewBand}
+              delayLongPress={400}
+              style={styles.bedPreviewHitArea}
+              accessibilityRole="button"
+              accessibilityLabel={`Bed freshness illustration, ${displayBand} state. Long press to preview states in development.`}
+            >
+              <AnimatedBedIllustration band={displayBand} size={162} />
+            </Pressable>
+          </AnimatedScoreRing>
 
-          {/* Score block */}
           <View style={styles.scoreBlock}>
             <View style={styles.scoreRow}>
-              <Text style={[styles.scoreNumber, { color: bandColor }]}>{scoreText}</Text>
+              <AnimatedScoreText
+                value={scoreValue}
+                color={bandColor}
+                style={styles.scoreNumber}
+              />
               {showPercent && (
                 <Text style={[styles.scorePercent, { color: bandColor }]}>%</Text>
               )}
@@ -80,24 +123,23 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* ── Primary CTA ─────────────────────────────────────────── */}
-        <Pressable
-          style={styles.ctaButton}
+        <AnimatedCtaButton
+          label="Sheets changed!"
           onPress={handleChanged}
-          accessibilityRole="button"
-          accessibilityLabel="I changed the sheets — tap to reset freshness"
-        >
-          <Text style={styles.ctaButtonText}>I changed the sheets</Text>
-        </Pressable>
+          style={styles.ctaButton}
+          textStyle={styles.ctaButtonText}
+          accessibilityLabel="Sheets changed — tap to reset freshness"
+        />
 
-        {/* ── Quick actions ────────────────────────────────────────── */}
         <View style={styles.quickActions}>
-          <QuickActionButton label="Add event" icon={Plus} onPress={() => { /* Phase 6 */ }} />
-          <QuickActionButton label="Share" icon={Share2} onPress={() => { /* Phase 9 */ }} />
+          <QuickActionButton
+            label="Quick oops"
+            icon={Plus}
+            onPress={() => setOopsSheetVisible(true)}
+          />
           <QuickActionButton label="Partner" icon={Users} onPress={() => { /* Phase 7 */ }} />
         </View>
 
-        {/* ── Disclaimer ───────────────────────────────────────────── */}
         <Text style={styles.disclaimer}>
           Freshy is a fun reminder tool and does not provide medical or hygiene advice.
         </Text>
@@ -180,6 +222,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.lg,
   },
+  bedPreviewHitArea: {
+    width: 162,
+    height: 162,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   scoreBlock: {
     alignItems: 'center',
     gap: Spacing.sm,
@@ -193,7 +241,6 @@ const styles = StyleSheet.create({
   },
   scorePercent: {
     ...Typography.scoreLG,
-    // Align % sign at the bottom of the large number
     paddingBottom: 6,
     marginLeft: 2,
   },
@@ -206,7 +253,7 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   ctaButton: {
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.cta,
     borderRadius: BorderRadius.xxl,
     paddingVertical: Spacing.lg + 2,
     alignItems: 'center',

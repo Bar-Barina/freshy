@@ -22,7 +22,7 @@ export interface Bed {
   preferredChangeIntervalDays: number;
   /** Consecutive on-time sheet changes. Resets if interval is exceeded. */
   streak: number;
-  events: BedEvent[];
+  oops: BedOops[];
   createdAt: string;
   updatedAt: string;
   sharedWith: SharedBedMember[];
@@ -32,9 +32,9 @@ export interface Bed {
   lastChangedByName?: string;
 }
 
-// ─── Events ──────────────────────────────────────────────────────────────────
+// ─── Oops (bed freshness moments) ────────────────────────────────────────────
 
-export type BedEventType =
+export type BedOopsType =
   | 'pet'
   | 'sweaty'
   | 'sick'
@@ -43,9 +43,9 @@ export type BedEventType =
   | 'skipped_shower'
   | 'custom';
 
-export interface BedEvent {
+export interface BedOops {
   id: string;
-  type: BedEventType;
+  type: BedOopsType;
   label: string;
   /** Positive number; subtracted from score */
   penalty: number;
@@ -110,14 +110,14 @@ export interface WidgetProps {
 // ─── Storage ─────────────────────────────────────────────────────────────────
 
 /** Shape of bed data persisted to MMKV */
-export interface PersistedBed extends Omit<Bed, 'events'> {
-  eventIds: string[];
+export interface PersistedBed extends Omit<Bed, 'oops'> {
+  oopsIds: string[];
 }
 
 /** Shape of the offline mutation queue item */
 export interface QueuedMutation {
   id: string;
-  type: 'sheet_change' | 'add_event' | 'delete_event';
+  type: 'sheet_change' | 'add_oops' | 'delete_oops';
   payload: Record<string, unknown>;
   createdAt: string;
   retryCount: number;

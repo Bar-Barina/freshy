@@ -1,4 +1,4 @@
-import { Bed, BedEvent, UserSettings, DEFAULT_SETTINGS, QueuedMutation } from '@/types';
+import { Bed, BedOops, UserSettings, DEFAULT_SETTINGS, QueuedMutation } from '@/types';
 
 // ─── Bed ─────────────────────────────────────────────────────────────────────
 
@@ -8,7 +8,7 @@ const EMPTY_BED: Bed = {
   lastChangedAt: null,
   preferredChangeIntervalDays: 7,
   streak: 0,
-  events: [],
+  oops: [],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   sharedWith: [],
@@ -18,6 +18,9 @@ export function deserializeBed(raw: unknown): Bed {
   if (!raw || typeof raw !== 'object') return { ...EMPTY_BED };
 
   const obj = raw as Record<string, unknown>;
+
+  // Support legacy `events` key from earlier builds
+  const rawOops = obj.oops ?? obj.events;
 
   return {
     id: typeof obj.id === 'string' ? obj.id : EMPTY_BED.id,
@@ -33,8 +36,8 @@ export function deserializeBed(raw: unknown): Bed {
         : EMPTY_BED.preferredChangeIntervalDays,
     streak:
       typeof obj.streak === 'number' && obj.streak >= 0 ? obj.streak : 0,
-    events: Array.isArray(obj.events)
-      ? obj.events.map(deserializeBedEvent).filter((e): e is BedEvent => e !== null)
+    oops: Array.isArray(rawOops)
+      ? rawOops.map(deserializeBedOops).filter((o): o is BedOops => o !== null)
       : [],
     createdAt: typeof obj.createdAt === 'string' ? obj.createdAt : EMPTY_BED.createdAt,
     updatedAt: typeof obj.updatedAt === 'string' ? obj.updatedAt : EMPTY_BED.updatedAt,
@@ -45,7 +48,7 @@ export function deserializeBed(raw: unknown): Bed {
   };
 }
 
-export function deserializeBedEvent(raw: unknown): BedEvent | null {
+export function deserializeBedOops(raw: unknown): BedOops | null {
   if (!raw || typeof raw !== 'object') return null;
   const obj = raw as Record<string, unknown>;
 
@@ -61,7 +64,7 @@ export function deserializeBedEvent(raw: unknown): BedEvent | null {
 
   return {
     id: obj.id,
-    type: obj.type as BedEvent['type'],
+    type: obj.type as BedOops['type'],
     label: obj.label,
     penalty: Math.max(0, obj.penalty),
     createdAt: obj.createdAt,

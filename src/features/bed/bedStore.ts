@@ -20,7 +20,7 @@ export function createDefaultBed(intervalDays: number = 7): Bed {
     lastChangedAt: null,
     preferredChangeIntervalDays: intervalDays,
     streak: 0,
-    events: [],
+    oops: [],
     createdAt: now,
     updatedAt: now,
     sharedWith: [],

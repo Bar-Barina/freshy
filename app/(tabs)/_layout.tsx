@@ -1,9 +1,12 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import { Home, ClipboardList, Settings } from 'lucide-react-native';
+import { Home, ClipboardList, Share2, Settings } from 'lucide-react-native';
 import { Colors, Spacing } from '@/theme';
+import { useNotificationBootstrap } from '@/hooks/useNotificationBootstrap';
 
 export default function TabsLayout() {
+  useNotificationBootstrap();
+
   return (
     <Tabs
       screenOptions={{
@@ -25,7 +28,16 @@ export default function TabsLayout() {
         name="history"
         options={{
           title: 'History',
-          tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} strokeWidth={1.8} />,
+          tabBarIcon: ({ color, size }) => (
+            <ClipboardList color={color} size={size} strokeWidth={1.8} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="share"
+        options={{
+          title: 'Share',
+          tabBarIcon: ({ color, size }) => <Share2 color={color} size={size} strokeWidth={1.8} />,
         }}
       />
       <Tabs.Screen

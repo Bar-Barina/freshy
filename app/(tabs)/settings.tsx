@@ -4,8 +4,14 @@ import { router } from 'expo-router';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '@/theme';
 import { useSettings } from '@/features/settings/useSettings';
 import { useBed } from '@/features/bed/useBed';
+import {
+  requestNotificationPermission,
+  rescheduleNotifications,
+  cancelAllReminders,
+} from '@/services/notifications/notificationService';
 
 const INTERVAL_OPTIONS = [5, 7, 10, 14] as const;
+const THRESHOLD_OPTIONS = [25, 40, 55, 70] as const;
 
 export default function SettingsScreen() {
   const { settings, updateSettings, resetSettings } = useSettings();
@@ -23,6 +29,25 @@ export default function SettingsScreen() {
         },
       },
     ]);
+  };
+
+  const handleNotificationToggle = async (enabled: boolean) => {
+    if (enabled) {
+      const granted = await requestNotificationPermission();
+      updateSettings({ notificationsEnabled: granted });
+      if (granted) {
+        void rescheduleNotifications(bed, { ...settings, notificationsEnabled: true });
+      } else {
+        Alert.alert(
+          'Notifications blocked',
+          'You can enable reminders later in your device settings.'
+        );
+      }
+      return;
+    }
+
+    updateSettings({ notificationsEnabled: false });
+    void cancelAllReminders();
   };
 
   return (
@@ -63,12 +88,33 @@ export default function SettingsScreen() {
           <SettingsToggle
             label="Enable reminders"
             value={settings.notificationsEnabled}
-            onToggle={(v) => updateSettings({ notificationsEnabled: v })}
+            onToggle={handleNotificationToggle}
           />
           <View style={styles.divider} />
-          <View style={styles.settingsRow}>
-            <Text style={styles.settingsRowLabel}>Freshness alert below</Text>
-            <Text style={styles.settingsRowValue}>{settings.freshnessThreshold}%</Text>
+          <Text style={styles.thresholdLabel}>Freshness alert below</Text>
+          <View style={styles.intervalRow}>
+            {THRESHOLD_OPTIONS.map((pct) => (
+              <Pressable
+                key={pct}
+                style={[
+                  styles.intervalChip,
+                  settings.freshnessThreshold === pct && styles.intervalChipActive,
+                ]}
+                onPress={() => updateSettings({ freshnessThreshold: pct })}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: settings.freshnessThreshold === pct }}
+                accessibilityLabel={`Alert when freshness drops below ${pct} percent`}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    settings.freshnessThreshold === pct && styles.chipTextActive,
+                  ]}
+                >
+                  {pct}%
+                </Text>
+              </Pressable>
+            ))}
           </View>
         </SettingsSection>
 
@@ -186,6 +232,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.sm,
     paddingVertical: Spacing.lg,
+  },
+  thresholdLabel: {
+    ...Typography.labelSM,
+    color: Colors.textMuted,
+    paddingTop: Spacing.md,
+    paddingHorizontal: Spacing.lg,
   },
   intervalChip: {
     flex: 1,

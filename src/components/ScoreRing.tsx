@@ -94,7 +94,7 @@ export function ScoreRing({
 
       {/* Children are centered inside the ring */}
       {children !== undefined && (
-        <View style={styles.childContainer} pointerEvents="none">
+        <View style={styles.childContainer} pointerEvents="box-none">
           {children}
         </View>
       )}

@@ -1,4 +1,14 @@
-import Svg, { Circle, Rect, Path, G, Ellipse } from 'react-native-svg';
+import Svg, {
+  Circle,
+  Rect,
+  Path,
+  G,
+  Ellipse,
+  Defs,
+  LinearGradient,
+  Stop,
+  ClipPath,
+} from 'react-native-svg';
 import type { FreshnessBand } from '@/types';
 import { getBandLightColor } from '@/theme';
 
@@ -14,7 +24,11 @@ interface BedPalette {
   pillowShadow: string;
   duvet: string;
   duvetShadow: string;
+  mattressTop: string;
+  mattressSide: string;
 }
+
+type SkyMood = 'bright' | 'soft' | 'overcast' | 'storm';
 
 const PALETTES: Record<FreshnessBand, BedPalette> = {
   fresh: {
@@ -24,6 +38,8 @@ const PALETTES: Record<FreshnessBand, BedPalette> = {
     pillowShadow: '#E4E9EE',
     duvet: '#FFFFFF',
     duvetShadow: '#E0E6EC',
+    mattressTop: '#FAFBFC',
+    mattressSide: '#E8ECF0',
   },
   ok: {
     sheet: '#F5F5F5',
@@ -32,6 +48,8 @@ const PALETTES: Record<FreshnessBand, BedPalette> = {
     pillowShadow: '#DCDFE4',
     duvet: '#F2F2F0',
     duvetShadow: '#D8DDE2',
+    mattressTop: '#F0F2F4',
+    mattressSide: '#DDE2E8',
   },
   soon: {
     sheet: '#EDEBE8',
@@ -40,6 +58,8 @@ const PALETTES: Record<FreshnessBand, BedPalette> = {
     pillowShadow: '#CEC9C2',
     duvet: '#E8E4DE',
     duvetShadow: '#CCC6BE',
+    mattressTop: '#E4E0DA',
+    mattressSide: '#C8C2BA',
   },
   warning: {
     sheet: '#DDD8D0',
@@ -48,6 +68,8 @@ const PALETTES: Record<FreshnessBand, BedPalette> = {
     pillowShadow: '#B8B0A6',
     duvet: '#D4CEC4',
     duvetShadow: '#B4ACA2',
+    mattressTop: '#CEC8BE',
+    mattressSide: '#B0A89E',
   },
   biohazard: {
     sheet: '#C8C0B4',
@@ -56,52 +78,239 @@ const PALETTES: Record<FreshnessBand, BedPalette> = {
     pillowShadow: '#9A928A',
     duvet: '#BAB2A6',
     duvetShadow: '#9A9288',
+    mattressTop: '#B4ACA2',
+    mattressSide: '#908880',
   },
 };
 
-const FRAME_DARK = '#6B7280';
-const FRAME_MID = '#9CA3AF';
-const FRAME_LIGHT = '#D1D5DB';
-const MATTRESS = '#F9FAFB';
+const SKY_MOOD: Record<FreshnessBand, SkyMood> = {
+  fresh: 'bright',
+  ok: 'bright',
+  soon: 'soft',
+  warning: 'overcast',
+  biohazard: 'storm',
+};
+
+const SKY_GRADIENTS: Record<
+  SkyMood,
+  { top: string; mid: string; bottom: string; horizon: string }
+> = {
+  bright: { top: '#7EC8E8', mid: '#B8E0F0', bottom: '#F5E6C8', horizon: '#E8D4A8' },
+  soft: { top: '#9AB8CC', mid: '#C4D4DE', bottom: '#E8E4DC', horizon: '#D0CCC4' },
+  overcast: { top: '#7A8A9A', mid: '#A0ACB8', bottom: '#C8CED4', horizon: '#B0B8C0' },
+  storm: { top: '#3D4A5C', mid: '#5A6878', bottom: '#788898', horizon: '#606E7E' },
+};
+
+const HEADBOARD = '#8A8278';
+const HEADBOARD_INNER = '#A09890';
+const CLIP_ID = 'bed-circle-clip';
 
 /**
- * SVG bed illustration with 5 visual states telling a degradation story.
- * Fresh = hotel-perfect, tucked. Biohazard = complete chaos.
+ * Bed-first scene: large centered bed from foot-of-bed view, subtle sky mood behind.
+ * All artwork is clipped to the circle.
  */
 export function BedIllustration({ band, size = 160 }: BedIllustrationProps) {
   const palette = PALETTES[band];
   const bg = getBandLightColor(band);
+  const mood = SKY_MOOD[band];
 
   return (
     <Svg width={size} height={size} viewBox="0 0 200 200">
+      <Defs>
+        <ClipPath id={CLIP_ID}>
+          <Circle cx="100" cy="100" r="96" />
+        </ClipPath>
+        <LinearGradient id={`sky-${band}`} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={SKY_GRADIENTS[mood].top} />
+          <Stop offset="0.55" stopColor={SKY_GRADIENTS[mood].mid} />
+          <Stop offset="0.85" stopColor={SKY_GRADIENTS[mood].bottom} />
+          <Stop offset="1" stopColor={SKY_GRADIENTS[mood].horizon} />
+        </LinearGradient>
+      </Defs>
+
       <Circle cx="100" cy="100" r="96" fill={bg} />
 
-      {/* Frame shadow */}
-      <Rect x="24" y="78" width="158" height="106" rx="10" fill={FRAME_DARK} opacity="0.12" />
+      <G clipPath={`url(#${CLIP_ID})`}>
+        <RoomBackdrop band={band} skyId={`sky-${band}`} mood={mood} />
+        <BedFrame palette={palette} />
+        <Bedding band={band} palette={palette} mood={mood} />
+      </G>
+    </Svg>
+  );
+}
+
+/** Soft sky wash + tiny window — mood only, not a focal point */
+function RoomBackdrop({
+  band,
+  skyId,
+  mood,
+}: {
+  band: FreshnessBand;
+  skyId: string;
+  mood: SkyMood;
+}) {
+  const dim = band === 'warning' || band === 'biohazard' ? 0.7 : 0.45;
+
+  return (
+    <G opacity={dim}>
+      <Rect x="0" y="12" width="200" height="68" fill={`url(#${skyId})`} />
+
+      <Rect x="34" y="38" width="20" height="24" rx="2" fill="#E8E4DC" />
+      <Rect x="37" y="41" width="14" height="18" rx="1" fill={`url(#${skyId})`} />
+
+      {mood === 'bright' && <Circle cx="47" cy="48" r="3.5" fill="#FFE8A0" opacity={0.85} />}
+      {mood === 'storm' && (
+        <Ellipse cx="45" cy="48" rx="6" ry="3" fill="#4A5568" opacity={0.5} />
+      )}
+    </G>
+  );
+}
+
+/** Curved headboard + side rails + mattress — unmistakable bed silhouette */
+function BedFrame({ palette }: { palette: BedPalette }) {
+  return (
+    <G>
+      <Ellipse cx="100" cy="178" rx="76" ry="6" fill="#2D1B0E" opacity={0.07} />
+
+      {/* Curved headboard with tufting */}
+      <Path
+        d="M 28 108 Q 100 68 172 108 L 172 112 Q 100 74 28 112 Z"
+        fill={HEADBOARD}
+      />
+      <Path
+        d="M 36 106 Q 100 78 164 106 L 164 110 Q 100 82 36 110 Z"
+        fill={HEADBOARD_INNER}
+      />
+      <Path d="M 68 88 L 68 108" stroke="#7A7268" strokeWidth="1" opacity={0.45} />
+      <Path d="M 100 82 L 100 108" stroke="#7A7268" strokeWidth="1" opacity={0.45} />
+      <Path d="M 132 88 L 132 108" stroke="#7A7268" strokeWidth="1" opacity={0.45} />
 
       {/* Side rails */}
-      <Rect x="20" y="72" width="14" height="102" rx="5" fill={FRAME_MID} />
-      <Rect x="166" y="72" width="14" height="102" rx="5" fill={FRAME_MID} />
+      <Path
+        d="M 26 112 L 26 166"
+        stroke={palette.sheetShadow}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      <Path
+        d="M 174 112 L 174 166"
+        stroke={palette.sheetShadow}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
 
-      {/* Headboard */}
-      <Rect x="20" y="30" width="160" height="52" rx="12" fill={FRAME_DARK} />
-      <Rect x="24" y="34" width="152" height="44" rx="9" fill={FRAME_MID} />
-      <Rect x="34" y="50" width="132" height="3" rx="1.5" fill={FRAME_LIGHT} opacity="0.5" />
+      {/* Mattress thickness (foot edge) */}
+      <Path
+        d="M 26 166 L 174 166 L 178 178 L 22 178 Z"
+        fill={palette.mattressSide}
+      />
 
-      {/* Footboard */}
-      <Rect x="20" y="166" width="160" height="10" rx="5" fill={FRAME_DARK} />
-      <Rect x="24" y="167" width="152" height="7" rx="3.5" fill={FRAME_MID} />
+      {/* Mattress top */}
+      <Path
+        d="M 24 112 L 176 112 L 174 166 L 26 166 Z"
+        fill={palette.mattressTop}
+      />
 
-      {/* Mattress */}
-      <Rect x="34" y="72" width="132" height="96" rx="6" fill={MATTRESS} />
+      {/* Sheet */}
+      <Path
+        d="M 26 114 L 174 114 L 172 162 L 28 162 Z"
+        fill={palette.sheet}
+      />
+    </G>
+  );
+}
 
-      {/* Per-state bed contents */}
-      {band === 'fresh' && <FreshBed palette={palette} />}
-      {band === 'ok' && <OkBed palette={palette} />}
-      {band === 'soon' && <SoonBed palette={palette} />}
-      {band === 'warning' && <WarningBed palette={palette} />}
-      {band === 'biohazard' && <BiohazardBed palette={palette} />}
-    </Svg>
+/** Horizontal quilt stitching — instant "made bed" read */
+function QuiltLines({
+  rows,
+  color,
+  wavy = false,
+}: {
+  rows: { y: number; x1: number; x2: number }[];
+  color: string;
+  wavy?: boolean;
+}) {
+  return (
+    <G>
+      {rows.map((row, i) => (
+        <Path
+          key={i}
+          d={
+            wavy
+              ? `M ${row.x1} ${row.y} Q ${(row.x1 + row.x2) / 2} ${row.y + 2} ${row.x2} ${row.y}`
+              : `M ${row.x1} ${row.y} L ${row.x2} ${row.y}`
+          }
+          stroke={color}
+          strokeWidth="0.7"
+          fill="none"
+          opacity={0.38}
+          strokeLinecap="round"
+        />
+      ))}
+    </G>
+  );
+}
+
+const QUILT_ROWS: Record<FreshnessBand, { y: number; x1: number; x2: number }[]> = {
+  fresh: [
+    { y: 132, x1: 34, x2: 166 },
+    { y: 142, x1: 34, x2: 166 },
+    { y: 152, x1: 34, x2: 166 },
+    { y: 158, x1: 36, x2: 164 },
+  ],
+  ok: [
+    { y: 132, x1: 36, x2: 164 },
+    { y: 142, x1: 35, x2: 165 },
+    { y: 152, x1: 36, x2: 164 },
+    { y: 158, x1: 38, x2: 162 },
+  ],
+  soon: [
+    { y: 134, x1: 40, x2: 162 },
+    { y: 144, x1: 38, x2: 164 },
+    { y: 154, x1: 42, x2: 160 },
+    { y: 160, x1: 44, x2: 158 },
+  ],
+  warning: [
+    { y: 136, x1: 44, x2: 160 },
+    { y: 146, x1: 42, x2: 162 },
+    { y: 156, x1: 46, x2: 158 },
+    { y: 164, x1: 48, x2: 156 },
+  ],
+  biohazard: [
+    { y: 136, x1: 48, x2: 158 },
+    { y: 148, x1: 46, x2: 160 },
+    { y: 160, x1: 50, x2: 154 },
+    { y: 168, x1: 52, x2: 150 },
+  ],
+};
+
+function Pillow({
+  cx,
+  cy,
+  rx,
+  ry,
+  rotation,
+  palette,
+}: {
+  cx: number;
+  cy: number;
+  rx: number;
+  ry: number;
+  rotation: number;
+  palette: BedPalette;
+}) {
+  return (
+    <G rotation={rotation} origin={`${cx}, ${cy}`}>
+      <Ellipse cx={cx + 1} cy={cy + 2} rx={rx} ry={ry} fill={palette.pillowShadow} />
+      <Ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill={palette.pillow} />
+      <Path
+        d={`M ${cx - rx * 0.5} ${cy} Q ${cx} ${cy - ry * 0.35} ${cx + rx * 0.5} ${cy}`}
+        stroke={palette.pillowShadow}
+        strokeWidth="0.6"
+        fill="none"
+        opacity={0.4}
+      />
+    </G>
   );
 }
 
@@ -118,227 +327,144 @@ function Sparkle({ cx, cy, r, color }: { cx: number; cy: number; r: number; colo
   return <Path d={d} fill={color} />;
 }
 
-/**
- * Fresh: Hotel-perfect. Everything tucked, symmetric, sparkling.
- */
-function FreshBed({ palette }: { palette: BedPalette }) {
-  return (
-    <G>
-      {/* Sheet — perfectly flat, tucked at foot */}
-      <Rect x="34" y="72" width="132" height="96" rx="6" fill={palette.sheet} />
-      {/* Tuck line at foot */}
-      <Path d="M 38 162 L 162 162" stroke={palette.sheetShadow} strokeWidth="1.5" strokeLinecap="round" />
-
-      {/* Duvet — neat rectangle, perfectly centered */}
-      <Rect x="36" y="104" width="128" height="54" rx="5" fill={palette.duvetShadow} />
-      <Rect x="36" y="102" width="128" height="54" rx="5" fill={palette.duvet} />
-      {/* Duvet fold line at top */}
-      <Path d="M 40 106 L 160 106" stroke={palette.duvetShadow} strokeWidth="1.8" strokeLinecap="round" />
-      {/* Subtle duvet texture line */}
-      <Path d="M 50 126 Q 100 124 150 126" stroke={palette.duvetShadow} strokeWidth="0.8" fill="none" strokeLinecap="round" opacity="0.5" />
-
-      {/* Pillows — perfectly symmetric and plump */}
-      <Rect x="44" y="78" width="48" height="22" rx="11" fill={palette.pillowShadow} />
-      <Rect x="42" y="75" width="48" height="22" rx="11" fill={palette.pillow} />
-      <Rect x="110" y="78" width="48" height="22" rx="11" fill={palette.pillowShadow} />
-      <Rect x="108" y="75" width="48" height="22" rx="11" fill={palette.pillow} />
-
-      {/* Sparkle accents — fresh and clean */}
-      <Sparkle cx={50} cy={50} r={7} color="#7DAF9C" />
-      <Sparkle cx={152} cy={44} r={5.5} color="#7DAF9C" />
-      <Sparkle cx={168} cy={98} r={4.5} color="#7DAF9C" />
-      <Circle cx={36} cy={98} r={2} fill="#7DAF9C" opacity="0.4" />
-    </G>
-  );
+interface BeddingConfig {
+  pillowA: { cx: number; cy: number; rotation: number };
+  pillowB: { cx: number; cy: number; rotation: number };
+  duvetShadow: string;
+  duvet: string;
+  stains?: { cx: number; cy: number; rx: number; ry: number }[];
+  sparkles?: boolean;
+  stink?: boolean;
 }
 
-/**
- * Ok: Blanket shifted slightly right, one pillow tilted. Still clean.
- */
-function OkBed({ palette }: { palette: BedPalette }) {
+const BEDDING: Record<FreshnessBand, BeddingConfig> = {
+  fresh: {
+    pillowA: { cx: 68, cy: 104, rotation: -4 },
+    pillowB: { cx: 132, cy: 104, rotation: 4 },
+    duvetShadow:
+      'M 30 128 L 170 128 Q 174 148 170 160 L 30 160 Q 26 148 30 128 Z',
+    duvet: 'M 32 126 L 168 126 Q 172 146 168 158 L 32 158 Q 28 146 32 126 Z',
+    sparkles: true,
+  },
+  ok: {
+    pillowA: { cx: 64, cy: 105, rotation: -7 },
+    pillowB: { cx: 136, cy: 103, rotation: 6 },
+    duvetShadow:
+      'M 32 128 L 168 126 Q 172 148 168 160 L 32 160 Q 28 148 32 128 Z',
+    duvet: 'M 34 126 L 166 124 Q 170 146 166 158 L 34 158 Q 30 146 34 126 Z',
+  },
+  soon: {
+    pillowA: { cx: 58, cy: 106, rotation: -12 },
+    pillowB: { cx: 142, cy: 102, rotation: 10 },
+    duvetShadow:
+      'M 38 126 L 168 122 Q 172 150 160 162 L 34 160 Q 28 142 38 126 Z',
+    duvet: 'M 40 124 L 166 120 Q 170 148 158 160 L 36 158 Q 30 140 40 124 Z',
+    stains: [{ cx: 118, cy: 146, rx: 4, ry: 2.5 }],
+  },
+  warning: {
+    pillowA: { cx: 52, cy: 108, rotation: 16 },
+    pillowB: { cx: 148, cy: 100, rotation: -14 },
+    duvetShadow:
+      'M 42 124 L 168 118 Q 174 148 164 166 L 38 164 Q 30 140 42 124 Z',
+    duvet: 'M 44 122 L 166 116 Q 172 146 162 164 L 40 162 Q 32 138 44 122 Z',
+    stains: [
+      { cx: 88, cy: 144, rx: 4.5, ry: 3 },
+      { cx: 128, cy: 152, rx: 3.5, ry: 2.5 },
+    ],
+  },
+  biohazard: {
+    pillowA: { cx: 48, cy: 110, rotation: 22 },
+    pillowB: { cx: 152, cy: 98, rotation: -18 },
+    duvetShadow:
+      'M 46 122 L 166 112 Q 174 148 162 170 L 42 166 Q 34 138 46 122 Z',
+    duvet: 'M 48 120 L 164 110 Q 172 146 160 168 L 44 164 Q 36 136 48 120 Z',
+    stains: [
+      { cx: 76, cy: 140, rx: 5, ry: 3.5 },
+      { cx: 110, cy: 150, rx: 6, ry: 4 },
+      { cx: 144, cy: 136, rx: 5, ry: 3.5 },
+    ],
+    stink: true,
+  },
+};
+
+function Bedding({
+  band,
+  palette,
+  mood,
+}: {
+  band: FreshnessBand;
+  palette: BedPalette;
+  mood: SkyMood;
+}) {
+  const config = BEDDING[band];
+
   return (
     <G>
-      {/* Sheet — still mostly flat */}
-      <Rect x="34" y="72" width="132" height="96" rx="6" fill={palette.sheet} />
-
-      {/* Duvet — shifted slightly right, soft curve */}
-      <Path
-        d="M 38 104 L 165 104 Q 168 104 168 107 L 168 154 Q 168 157 165 157 L 38 157 Q 35 157 35 154 L 35 107 Q 35 104 38 104 Z"
-        fill={palette.duvetShadow}
+      <Pillow
+        cx={config.pillowA.cx}
+        cy={config.pillowA.cy}
+        rx={30}
+        ry={13}
+        rotation={config.pillowA.rotation}
+        palette={palette}
       />
-      <Path
-        d="M 40 102 L 166 102 Q 169 102 169 105 L 169 152 Q 169 155 166 155 L 40 155 Q 37 155 37 152 L 37 105 Q 37 102 40 102 Z"
-        fill={palette.duvet}
+      <Pillow
+        cx={config.pillowB.cx}
+        cy={config.pillowB.cy}
+        rx={30}
+        ry={13}
+        rotation={config.pillowB.rotation}
+        palette={palette}
       />
-      {/* Fold line */}
-      <Path d="M 42 106 L 164 106" stroke={palette.duvetShadow} strokeWidth="1.6" strokeLinecap="round" />
-      {/* Light wrinkle */}
-      <Path d="M 60 124 Q 80 120 100 124" stroke={palette.duvetShadow} strokeWidth="1" fill="none" strokeLinecap="round" opacity="0.6" />
 
-      {/* Pillows — left normal, right tilted slightly */}
-      <Rect x="44" y="78" width="48" height="22" rx="11" fill={palette.pillowShadow} />
-      <Rect x="42" y="75" width="48" height="22" rx="11" fill={palette.pillow} />
-      {/* Right pillow slightly rotated */}
-      <G rotation={3} origin="132, 87">
-        <Rect x="110" y="79" width="48" height="22" rx="11" fill={palette.pillowShadow} />
-        <Rect x="108" y="76" width="48" height="22" rx="11" fill={palette.pillow} />
-      </G>
+      <Path d={config.duvetShadow} fill={palette.duvetShadow} />
+      <Path d={config.duvet} fill={palette.duvet} />
 
-      {/* Subtle pillow crease */}
-      <Path d="M 118 84 Q 128 81 138 84" stroke={palette.pillowShadow} strokeWidth="1" fill="none" strokeLinecap="round" />
-    </G>
-  );
-}
-
-/**
- * Soon: Blanket pulled to one side, untucked from foot. Wrinkles visible.
- * One stain mark. Pillows pushed apart.
- */
-function SoonBed({ palette }: { palette: BedPalette }) {
-  return (
-    <G>
-      {/* Sheet — showing some wrinkles */}
-      <Rect x="34" y="72" width="132" height="96" rx="6" fill={palette.sheet} />
-      {/* Sheet wrinkles */}
-      <Path d="M 50 130 Q 66 126 82 130" stroke={palette.sheetShadow} strokeWidth="1.2" fill="none" strokeLinecap="round" />
-      <Path d="M 110 138 Q 130 134 150 138" stroke={palette.sheetShadow} strokeWidth="1" fill="none" strokeLinecap="round" />
-
-      {/* Duvet — pulled toward right side, hanging off edge slightly */}
-      <Path
-        d={`M 44 106 C 60 104 130 100 170 106 L 172 150 C 170 156 140 158 100 156 C 60 154 40 152 38 148 L 44 106 Z`}
-        fill={palette.duvetShadow}
+      <QuiltLines
+        rows={QUILT_ROWS[band]}
+        color={palette.duvetShadow}
+        wavy={band === 'warning' || band === 'biohazard'}
       />
-      <Path
-        d={`M 46 104 C 62 102 132 98 170 104 L 172 148 C 170 154 140 156 100 154 C 60 152 42 150 40 146 L 46 104 Z`}
-        fill={palette.duvet}
-      />
-      {/* Fold line — uneven */}
-      <Path d="M 50 108 Q 100 104 166 108" stroke={palette.duvetShadow} strokeWidth="1.6" fill="none" strokeLinecap="round" />
-      {/* Wrinkle lines on duvet */}
-      <Path d="M 60 120 Q 80 116 100 120 Q 120 124 140 120" stroke={palette.duvetShadow} strokeWidth="1.3" fill="none" strokeLinecap="round" />
-      <Path d="M 70 134 Q 95 130 120 134" stroke={palette.duvetShadow} strokeWidth="1.1" fill="none" strokeLinecap="round" />
 
-      {/* One stain mark */}
-      <Ellipse cx={125} cy={140} rx={4} ry={3} fill="#C4B8A8" opacity="0.5" />
+      {config.stains?.map((stain, i) => (
+        <Ellipse
+          key={i}
+          cx={stain.cx}
+          cy={stain.cy}
+          rx={stain.rx}
+          ry={stain.ry}
+          fill="#A09484"
+          opacity={0.45}
+        />
+      ))}
 
-      {/* Pillows — pushed apart, left one shifted left, right shifted right + rotated */}
-      <Rect x="38" y="79" width="46" height="21" rx="10" fill={palette.pillowShadow} />
-      <Rect x="36" y="76" width="46" height="21" rx="10" fill={palette.pillow} />
-      <G rotation={-5} origin="140, 86">
-        <Rect x="118" y="80" width="46" height="21" rx="10" fill={palette.pillowShadow} />
-        <Rect x="116" y="77" width="46" height="21" rx="10" fill={palette.pillow} />
-      </G>
-      {/* Pillow creases */}
-      <Path d="M 46 84 Q 54 81 62 84" stroke={palette.pillowShadow} strokeWidth="1.2" fill="none" strokeLinecap="round" />
-      <Path d="M 126 84 Q 134 82 142 84" stroke={palette.pillowShadow} strokeWidth="1.2" fill="none" strokeLinecap="round" />
-    </G>
-  );
-}
+      {config.sparkles && (
+        <>
+          <Sparkle cx={142} cy={52} r={4} color="#7DAF9C" />
+          <Sparkle cx={160} cy={64} r={3} color="#7DAF9C" />
+        </>
+      )}
 
-/**
- * Warning: Blanket bunched up and hanging off right side. Multiple stains.
- * Pillows flat and rotated. Deep creases.
- */
-function WarningBed({ palette }: { palette: BedPalette }) {
-  return (
-    <G>
-      {/* Sheet — wrinkled and exposed */}
-      <Rect x="34" y="72" width="132" height="96" rx="6" fill={palette.sheet} />
-      {/* Sheet wrinkles */}
-      <Path d="M 42 118 Q 58 112 74 118" stroke={palette.sheetShadow} strokeWidth="1.4" fill="none" strokeLinecap="round" />
-      <Path d="M 50 134 Q 70 128 90 134" stroke={palette.sheetShadow} strokeWidth="1.2" fill="none" strokeLinecap="round" />
-      <Path d="M 42 150 Q 60 144 78 150" stroke={palette.sheetShadow} strokeWidth="1.1" fill="none" strokeLinecap="round" />
-
-      {/* Stain on exposed sheet */}
-      <Ellipse cx={65} cy={142} rx={5} ry={3.5} fill="#C4B4A0" opacity="0.45" />
-
-      {/* Duvet — bunched right, hanging over edge, asymmetric blob shape */}
-      <Path
-        d={`M 56 108 C 80 102 140 96 176 108 C 180 120 178 140 174 152 C 168 160 130 162 105 158 C 80 154 56 148 50 140 C 44 132 48 118 56 108 Z`}
-        fill={palette.duvetShadow}
-      />
-      <Path
-        d={`M 58 106 C 82 100 142 94 176 106 C 180 118 178 138 174 150 C 168 158 130 160 105 156 C 80 152 58 146 52 138 C 46 130 50 116 58 106 Z`}
-        fill={palette.duvet}
-      />
-      {/* Heavy wrinkle lines on duvet */}
-      <Path d="M 70 114 Q 90 108 110 114 Q 130 120 150 114" stroke={palette.duvetShadow} strokeWidth="1.6" fill="none" strokeLinecap="round" />
-      <Path d="M 80 128 Q 105 122 130 128 Q 150 134 165 128" stroke={palette.duvetShadow} strokeWidth="1.4" fill="none" strokeLinecap="round" />
-      <Path d="M 72 140 Q 95 134 118 140" stroke={palette.duvetShadow} strokeWidth="1.3" fill="none" strokeLinecap="round" />
-
-      {/* Stains on duvet */}
-      <Ellipse cx={130} cy={120} rx={4.5} ry={3} fill="#B8A894" opacity="0.5" />
-      <Ellipse cx={150} cy={138} rx={3.5} ry={2.5} fill="#B8A894" opacity="0.4" />
-
-      {/* Pillows — flattened, rotated, displaced */}
-      <G rotation={8} origin="56, 84">
-        <Rect x="34" y="79" width="44" height="18" rx="9" fill={palette.pillowShadow} />
-        <Rect x="33" y="76" width="44" height="18" rx="9" fill={palette.pillow} />
-      </G>
-      <G rotation={-12} origin="140, 84">
-        <Rect x="120" y="80" width="44" height="18" rx="9" fill={palette.pillowShadow} />
-        <Rect x="118" y="77" width="44" height="18" rx="9" fill={palette.pillow} />
-      </G>
-      {/* Deep pillow creases */}
-      <Path d="M 40 82 Q 52 78 64 82" stroke={palette.pillowShadow} strokeWidth="1.4" fill="none" strokeLinecap="round" />
-      <Path d="M 44 87 Q 52 85 60 87" stroke={palette.pillowShadow} strokeWidth="1.1" fill="none" strokeLinecap="round" />
-      <Path d="M 126 82 Q 138 78 150 82" stroke={palette.pillowShadow} strokeWidth="1.4" fill="none" strokeLinecap="round" />
-    </G>
-  );
-}
-
-/**
- * Biohazard: Complete chaos. Blanket mostly off, twisted. Stains on mattress.
- * Pillows sideways. Stink lines.
- */
-function BiohazardBed({ palette }: { palette: BedPalette }) {
-  return (
-    <G>
-      {/* Sheet — heavily wrinkled, stains visible on mattress */}
-      <Rect x="34" y="72" width="132" height="96" rx="6" fill={palette.sheet} />
-      {/* Mattress/sheet stains */}
-      <Ellipse cx={60} cy={110} rx={5} ry={4} fill="#B0A494" opacity="0.5" />
-      <Ellipse cx={100} cy={148} rx={6} ry={4} fill="#B0A494" opacity="0.4" />
-      <Ellipse cx={140} cy={125} rx={4} ry={3} fill="#B0A494" opacity="0.35" />
-      {/* Heavy sheet wrinkles (chaotic) */}
-      <Path d="M 38 110 Q 52 104 66 110 Q 80 116 94 110" stroke={palette.sheetShadow} strokeWidth="1.6" fill="none" strokeLinecap="round" />
-      <Path d="M 48 130 Q 68 124 88 130" stroke={palette.sheetShadow} strokeWidth="1.4" fill="none" strokeLinecap="round" />
-      <Path d="M 100 140 Q 120 134 140 140" stroke={palette.sheetShadow} strokeWidth="1.3" fill="none" strokeLinecap="round" />
-      <Path d="M 44 152 Q 64 146 84 152" stroke={palette.sheetShadow} strokeWidth="1.2" fill="none" strokeLinecap="round" />
-
-      {/* Duvet — mostly off the bed, twisted, hanging off right side dramatically */}
-      <Path
-        d={`M 80 110 C 110 100 160 92 184 108 C 188 124 184 148 178 158 C 170 168 140 166 115 162 C 90 158 75 150 70 140 C 65 130 68 118 80 110 Z`}
-        fill={palette.duvetShadow}
-      />
-      <Path
-        d={`M 82 108 C 112 98 162 90 184 106 C 188 122 184 146 178 156 C 170 166 140 164 115 160 C 90 156 77 148 72 138 C 67 128 70 116 82 108 Z`}
-        fill={palette.duvet}
-      />
-      {/* Chaotic duvet wrinkles */}
-      <Path d="M 90 114 Q 110 106 130 114 Q 150 122 170 114" stroke={palette.duvetShadow} strokeWidth="2" fill="none" strokeLinecap="round" />
-      <Path d="M 95 130 Q 120 122 145 130 Q 160 138 175 130" stroke={palette.duvetShadow} strokeWidth="1.8" fill="none" strokeLinecap="round" />
-      <Path d="M 88 144 Q 110 136 132 144" stroke={palette.duvetShadow} strokeWidth="1.5" fill="none" strokeLinecap="round" />
-      {/* Duvet stain */}
-      <Ellipse cx={140} cy={125} rx={5} ry={3.5} fill="#A09484" opacity="0.5" />
-
-      {/* Pillows — one sideways, one displaced off-center, both flat */}
-      <G rotation={25} origin="50, 84">
-        <Rect x="30" y="78" width="40" height="16" rx="8" fill={palette.pillowShadow} />
-        <Rect x="29" y="75" width="40" height="16" rx="8" fill={palette.pillow} />
-      </G>
-      <G rotation={-18} origin="130, 80">
-        <Rect x="110" y="74" width="42" height="16" rx="8" fill={palette.pillowShadow} />
-        <Rect x="109" y="71" width="42" height="16" rx="8" fill={palette.pillow} />
-      </G>
-
-      {/* Stink / odor wavy lines */}
-      <Path d="M 163 72 Q 169 64 163 56" stroke="#9CA080" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-      <Path d="M 170 76 Q 176 66 170 56" stroke="#9CA080" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-      <Path d="M 157 69 Q 162 62 157 55" stroke="#9CA080" strokeWidth="1.3" fill="none" strokeLinecap="round" />
-
-      {/* Extra chaos: a corner of sheet dangling */}
-      <Path d="M 34 155 Q 28 160 30 168" stroke={palette.sheetShadow} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      {config.stink && (
+        <>
+          <Path
+            d="M 40 36 Q 44 28 40 22"
+            stroke="#8A9078"
+            strokeWidth="1.2"
+            fill="none"
+            strokeLinecap="round"
+            opacity={mood === 'storm' ? 0.7 : 0.4}
+          />
+          <Path
+            d="M 50 38 Q 54 26 50 20"
+            stroke="#8A9078"
+            strokeWidth="1.2"
+            fill="none"
+            strokeLinecap="round"
+            opacity={mood === 'storm' ? 0.7 : 0.4}
+          />
+        </>
+      )}
     </G>
   );
 }
