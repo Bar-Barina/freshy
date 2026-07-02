@@ -95,6 +95,10 @@ export function deserializeSettings(raw: unknown): UserSettings {
       obj.theme === 'light' || obj.theme === 'dark' || obj.theme === 'system'
         ? obj.theme
         : DEFAULT_SETTINGS.theme,
+    gender:
+      obj.gender === 'male' || obj.gender === 'female' || obj.gender === 'skip'
+        ? obj.gender
+        : DEFAULT_SETTINGS.gender,
     hasPets:
       typeof obj.hasPets === 'boolean' ? obj.hasPets : DEFAULT_SETTINGS.hasPets,
     sweatsOften:
@@ -103,6 +107,8 @@ export function deserializeSettings(raw: unknown): UserSettings {
         : DEFAULT_SETTINGS.sweatsOften,
     sharesBed:
       typeof obj.sharesBed === 'boolean' ? obj.sharesBed : DEFAULT_SETTINGS.sharesBed,
+    hasAC:
+      typeof obj.hasAC === 'boolean' ? obj.hasAC : DEFAULT_SETTINGS.hasAC,
     defaultIntervalDays:
       typeof obj.defaultIntervalDays === 'number' && obj.defaultIntervalDays > 0
         ? obj.defaultIntervalDays

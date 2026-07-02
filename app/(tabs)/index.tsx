@@ -1,17 +1,22 @@
+import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { Plus, Share2, Users } from 'lucide-react-native';
 import { Colors, Typography, Spacing, BorderRadius, Shadow, getBandColor } from '@/theme';
 import { useBed } from '@/features/bed/useBed';
 import { BedIllustration } from '@/components/BedIllustration';
 import { ScoreRing } from '@/components/ScoreRing';
+import { CelebrationOverlay } from '@/components/CelebrationOverlay';
 
 export default function HomeScreen() {
   const { bed, status, markSheetsChanged } = useBed();
+  const [celebrating, setCelebrating] = useState(false);
 
   const handleChanged = async () => {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     markSheetsChanged();
+    setCelebrating(true);
   };
 
   const bandColor = getBandColor(status.band);
@@ -28,6 +33,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <CelebrationOverlay visible={celebrating} onFinished={() => setCelebrating(false)} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -70,9 +76,9 @@ export default function HomeScreen() {
 
         {/* ── Quick actions ────────────────────────────────────────── */}
         <View style={styles.quickActions}>
-          <QuickActionButton label="Add event" emoji="➕" onPress={() => { /* Phase 6 */ }} />
-          <QuickActionButton label="Share" emoji="📤" onPress={() => { /* Phase 9 */ }} />
-          <QuickActionButton label="Partner" emoji="👫" onPress={() => { /* Phase 7 */ }} />
+          <QuickActionButton label="Add event" icon={Plus} onPress={() => { /* Phase 6 */ }} />
+          <QuickActionButton label="Share" icon={Share2} onPress={() => { /* Phase 9 */ }} />
+          <QuickActionButton label="Partner" icon={Users} onPress={() => { /* Phase 7 */ }} />
         </View>
 
         {/* ── Disclaimer ───────────────────────────────────────────── */}
@@ -86,11 +92,11 @@ export default function HomeScreen() {
 
 function QuickActionButton({
   label,
-  emoji,
+  icon: Icon,
   onPress,
 }: {
   label: string;
-  emoji: string;
+  icon: React.ComponentType<{ color: string; size: number; strokeWidth?: number }>;
   onPress: () => void;
 }) {
   return (
@@ -100,7 +106,7 @@ function QuickActionButton({
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <Text style={styles.quickActionEmoji}>{emoji}</Text>
+      <Icon color={Colors.textSecondary} size={22} strokeWidth={1.8} />
       <Text style={styles.quickActionLabel}>{label}</Text>
     </Pressable>
   );
@@ -186,9 +192,6 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
     ...Shadow.sm,
     minHeight: 44,
-  },
-  quickActionEmoji: {
-    fontSize: 22,
   },
   quickActionLabel: {
     ...Typography.labelSM,

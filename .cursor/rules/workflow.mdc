@@ -23,6 +23,22 @@ alwaysApply: true
 - Branch naming: `phase/<name>`, `fix/<name>`, `feat/<name>`.
 - Keep commits atomic and well-described.
 
+## Commits
+
+- Informative yet short: one line that says *what* and *why* (max ~72 chars).
+- Format: `type: concise description` (e.g. `feat: add celebration overlay on sheet change`).
+- Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `style`, `test`.
+- Never commit without Bar's explicit approval.
+
+## Pull Requests
+
+- Title mirrors the commit style: `type: what this PR does`.
+- Body must include:
+  - **Summary** — 1–3 bullets explaining what changed and why.
+  - **Test plan** — 3–4 bullet checklist of how to verify (manual or automated).
+- Always assign Bar (`Bar-Barina`) as reviewer/assignee.
+- Use `gh pr create --assignee Bar-Barina` when creating PRs.
+
 ## Spending & Safety
 
 - Never exceed Cursor usage limits. If a task requires many iterations, pause and check with Bar.

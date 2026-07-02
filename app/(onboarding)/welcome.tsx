@@ -3,12 +3,13 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Typography, Spacing, BorderRadius } from '@/theme';
 import { BedIllustration } from '@/components/BedIllustration';
+import { OnboardingProgress } from '@/components/OnboardingProgress';
 
 export default function WelcomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
+      <OnboardingProgress step={1} totalSteps={3} />
       <View style={styles.content}>
-        {/* Bed illustration in fresh state — first impression sets the tone */}
         <View style={styles.illustrationContainer}>
           <BedIllustration band="fresh" size={200} />
         </View>
@@ -18,6 +19,9 @@ export default function WelcomeScreen() {
           <Text style={styles.subtitle}>
             Freshy tracks how fresh your sheets are — just for fun.
           </Text>
+          <Text style={styles.subtitleSecondary}>
+            No judgement, we promise.
+          </Text>
           <Text style={styles.disclaimer}>
             Fun reminder tool only. Not medical or hygiene advice.
           </Text>
@@ -26,12 +30,12 @@ export default function WelcomeScreen() {
 
       <View style={styles.footer}>
         <Pressable
-          style={styles.primaryButton}
+          style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryButtonPressed]}
           onPress={() => router.push('/(onboarding)/preferences')}
           accessibilityRole="button"
           accessibilityLabel="Get started"
         >
-          <Text style={styles.primaryButtonText}>Get started</Text>
+          <Text style={styles.primaryButtonText}>{"Let\u2019s go"}</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -51,7 +55,6 @@ const styles = StyleSheet.create({
   },
   illustrationContainer: {
     marginBottom: Spacing.xxxl,
-    // No explicit width/height — SVG handles its own size via the `size` prop
   },
   textBlock: {
     alignItems: 'center',
@@ -68,6 +71,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     maxWidth: 280,
   },
+  subtitleSecondary: {
+    ...Typography.bodyMD,
+    color: Colors.textMuted,
+    textAlign: 'center',
+  },
   disclaimer: {
     ...Typography.caption,
     color: Colors.textMuted,
@@ -79,10 +87,13 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
   },
   primaryButton: {
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.cta,
     borderRadius: BorderRadius.xxl,
     paddingVertical: Spacing.lg,
     alignItems: 'center',
+  },
+  primaryButtonPressed: {
+    backgroundColor: Colors.ctaPressed,
   },
   primaryButtonText: {
     ...Typography.labelLG,

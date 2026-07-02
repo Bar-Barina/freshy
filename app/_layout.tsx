@@ -6,22 +6,26 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StyleSheet } from 'react-native';
 import { Colors } from '@/theme';
 import { useSettings } from '@/features/settings/useSettings';
+import { storageGet, STORAGE_KEYS } from '@/services/storage/mmkv';
+import { deserializeSettings } from '@/services/storage/serializers';
 
 export default function RootLayout() {
-  const { settings, isLoaded } = useSettings();
+  const { isLoaded } = useSettings();
   const router = useRouter();
   const segments = useSegments();
 
   useEffect(() => {
     if (!isLoaded) return;
 
+    // Read fresh from MMKV — the hook's useState can be stale after
+    // another hook instance (e.g. onboarding screen) updates MMKV.
+    const freshSettings = deserializeSettings(storageGet<unknown>(STORAGE_KEYS.SETTINGS));
     const inOnboarding = segments[0] === '(onboarding)';
 
-    // Only redirect if not already in the right place — prevents loop
-    if (!settings.onboardingComplete && !inOnboarding) {
+    if (!freshSettings.onboardingComplete && !inOnboarding) {
       router.replace('/(onboarding)/welcome');
     }
-  }, [isLoaded, settings.onboardingComplete, segments, router]);
+  }, [isLoaded, segments, router]);
 
   return (
     <GestureHandlerRootView style={styles.root}>

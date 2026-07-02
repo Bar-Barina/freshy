@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, SectionList, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { format, parseISO } from 'date-fns';
+import { Sparkles, MapPin, ClipboardList, X } from 'lucide-react-native';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '@/theme';
 import { useBed } from '@/features/bed/useBed';
 import { BedEvent } from '@/types';
@@ -43,7 +44,7 @@ export default function HistoryScreen() {
           <Text style={styles.title}>History</Text>
         </View>
         <View style={styles.empty}>
-          <Text style={styles.emptyEmoji}>📋</Text>
+          <ClipboardList color={Colors.textMuted} size={48} strokeWidth={1.4} />
           <Text style={styles.emptyTitle}>Nothing here yet</Text>
           <Text style={styles.emptySubtitle}>
             Your sheet changes and events will appear here.
@@ -87,9 +88,10 @@ function HistoryRow({
   return (
     <View style={[styles.row, Shadow.sm]}>
       <View style={styles.rowIcon}>
-        <Text style={styles.rowEmoji}>
-          {item.type === 'sheet_change' ? '🧺' : '📌'}
-        </Text>
+        {item.type === 'sheet_change'
+          ? <Sparkles color={Colors.fresh} size={20} strokeWidth={1.8} />
+          : <MapPin color={Colors.accent} size={20} strokeWidth={1.8} />
+        }
       </View>
       <View style={styles.rowContent}>
         <Text style={styles.rowLabel}>{item.label}</Text>
@@ -105,7 +107,7 @@ function HistoryRow({
           accessibilityRole="button"
           accessibilityLabel={`Remove ${item.label}`}
         >
-          <Text style={styles.deleteText}>✕</Text>
+          <X color={Colors.textMuted} size={16} strokeWidth={2} />
         </Pressable>
       )}
     </View>
@@ -172,7 +174,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowEmoji: { fontSize: 20 },
   rowContent: { flex: 1 },
   rowLabel: { ...Typography.bodyMD, color: Colors.textPrimary },
   rowTime: { ...Typography.caption, color: Colors.textMuted },
@@ -186,7 +187,6 @@ const styles = StyleSheet.create({
     minWidth: 44,
     minHeight: 44,
   },
-  deleteText: { ...Typography.labelMD, color: Colors.textMuted },
   empty: {
     flex: 1,
     alignItems: 'center',
@@ -194,7 +194,6 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     paddingHorizontal: Spacing.xl,
   },
-  emptyEmoji: { fontSize: 48 },
   emptyTitle: { ...Typography.h3, color: Colors.textPrimary },
   emptySubtitle: { ...Typography.bodyMD, color: Colors.textMuted, textAlign: 'center' },
 });

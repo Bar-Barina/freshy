@@ -54,6 +54,8 @@ export interface BedEvent {
 
 // ─── Settings ────────────────────────────────────────────────────────────────
 
+export type Gender = 'male' | 'female' | 'skip';
+
 export interface UserSettings {
   notificationsEnabled: boolean;
   /** 0–23 hour of day for reminder notification */
@@ -61,9 +63,11 @@ export interface UserSettings {
   /** 0–100; send threshold reminder when score drops below this */
   freshnessThreshold: number;
   theme: 'light' | 'dark' | 'system';
+  gender: Gender;
   hasPets: boolean;
   sweatsOften: boolean;
   sharesBed: boolean;
+  hasAC: boolean;
   defaultIntervalDays: number;
   onboardingComplete: boolean;
 }
@@ -73,9 +77,11 @@ export const DEFAULT_SETTINGS: UserSettings = {
   reminderHour: 9,
   freshnessThreshold: 40,
   theme: 'system',
+  gender: 'skip',
   hasPets: false,
   sweatsOften: false,
   sharesBed: false,
+  hasAC: false,
   defaultIntervalDays: 7,
   onboardingComplete: false,
 };
