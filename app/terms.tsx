@@ -32,7 +32,7 @@ export default function TermsScreen() {
 
         <Section title="3. No warranties">
           <Text style={styles.body}>
-            Freshy is provided "as is" without warranty of any kind. We do not guarantee
+            Freshy is provided &ldquo;as is&rdquo; without warranty of any kind. We do not guarantee
             accuracy, availability, or fitness for any particular purpose.
           </Text>
         </Section>

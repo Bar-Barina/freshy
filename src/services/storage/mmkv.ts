@@ -1,11 +1,13 @@
-import { MMKV } from 'react-native-mmkv';
+import { createMMKV } from 'react-native-mmkv';
 
 /**
  * Primary MMKV instance for all app data.
  * Not encrypted — data is non-sensitive (bed dates, preferences).
  * Auth session is stored in expo-secure-store, not here.
+ *
+ * react-native-mmkv v4 uses the createMMKV() factory instead of `new MMKV()`.
  */
-export const storage = new MMKV({ id: 'freshy-main' });
+export const storage = createMMKV({ id: 'freshy-main' });
 
 // ─── Typed helpers ────────────────────────────────────────────────────────────
 
@@ -24,7 +26,8 @@ export function storageSet<T>(key: string, value: T): void {
 }
 
 export function storageDelete(key: string): void {
-  storage.delete(key);
+  // v4 uses remove() instead of delete()
+  storage.remove(key);
 }
 
 export function storageHas(key: string): boolean {

@@ -1,35 +1,47 @@
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
-import { Stack, Redirect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StyleSheet } from 'react-native';
 import { Colors } from '@/theme';
 import { useSettings } from '@/features/settings/useSettings';
+import { BedProvider } from '@/features/bed/BedProvider';
+import { storageGet, STORAGE_KEYS } from '@/services/storage/mmkv';
+import { deserializeSettings } from '@/services/storage/serializers';
 
 export default function RootLayout() {
-  const { settings, isLoaded } = useSettings();
+  const { isLoaded } = useSettings();
+  const router = useRouter();
+  const segments = useSegments();
 
-  // Wait for settings to load from MMKV before routing
-  if (!isLoaded) {
-    return null;
-  }
+  useEffect(() => {
+    if (!isLoaded) return;
 
-  if (!settings.onboardingComplete) {
-    return <Redirect href="/(onboarding)/welcome" />;
-  }
+    // Read fresh from MMKV — the hook's useState can be stale after
+    // another hook instance (e.g. onboarding screen) updates MMKV.
+    const freshSettings = deserializeSettings(storageGet<unknown>(STORAGE_KEYS.SETTINGS));
+    const inOnboarding = segments[0] === '(onboarding)';
+
+    if (!freshSettings.onboardingComplete && !inOnboarding) {
+      router.replace('/(onboarding)/welcome');
+    }
+  }, [isLoaded, segments, router]);
 
   return (
-    <GestureHandlerRootView style={styles.root}>
-      <SafeAreaProvider>
-        <StatusBar style="auto" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="privacy" options={{ presentation: 'modal', headerShown: true, title: 'Privacy' }} />
-          <Stack.Screen name="terms" options={{ presentation: 'modal', headerShown: true, title: 'Terms' }} />
-        </Stack>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <BedProvider>
+      <GestureHandlerRootView style={styles.root}>
+        <SafeAreaProvider>
+          <StatusBar style="auto" />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="(onboarding)" />
+            <Stack.Screen name="privacy" options={{ presentation: 'modal', headerShown: true, title: 'Privacy' }} />
+            <Stack.Screen name="terms" options={{ presentation: 'modal', headerShown: true, title: 'Terms' }} />
+          </Stack>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </BedProvider>
   );
 }
 

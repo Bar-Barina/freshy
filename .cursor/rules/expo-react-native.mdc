@@ -1,0 +1,34 @@
+---
+description: Expo SDK 56 and React Native specific conventions
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Expo & React Native Rules
+
+## Expo SDK 56
+
+- Always read versioned docs before using Expo APIs: https://docs.expo.dev/versions/v56.0.0/
+- Use `npm install --legacy-peer-deps` for all dependency installations.
+- jest@29 (NOT 30) — required for jest-expo 56 compatibility.
+
+## react-native-mmkv v4
+
+- Factory: `createMMKV()` (not `new MMKV()`).
+- Delete: `storage.remove(key)` (not `storage.delete(key)`).
+- Use `useState` lazy initializers for sync MMKV reads. No useEffect for initial load.
+
+## ESLint
+
+- Flat config in `eslint.config.js` (not `.eslintrc.js`). ESLint v10.
+- React version pinned to `'19'` in settings to avoid plugin crashes.
+
+## Navigation
+
+- Never use `<Redirect>` as the sole return of a layout component — causes infinite loops.
+- Use `useEffect` + `router.replace()` guarded by `useSegments()` for conditional navigation.
+
+## Build
+
+- Gradle pinned to 8.x via `plugins/withGradleProperties.js` (RN 0.83 incompatible with Gradle 9).
+- `react-native-reanimated` Babel plugin is auto-configured by `babel-preset-expo`. Do NOT add it to `app.json` plugins.

@@ -1,4 +1,4 @@
-import { Bed, BedEvent, UserSettings, DEFAULT_SETTINGS, QueuedMutation } from '@/types';
+import { Bed, BedOops, UserSettings, DEFAULT_SETTINGS, QueuedMutation } from '@/types';
 
 // ─── Bed ─────────────────────────────────────────────────────────────────────
 
@@ -7,7 +7,8 @@ const EMPTY_BED: Bed = {
   name: 'My Bed',
   lastChangedAt: null,
   preferredChangeIntervalDays: 7,
-  events: [],
+  streak: 0,
+  oops: [],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   sharedWith: [],
@@ -17,6 +18,9 @@ export function deserializeBed(raw: unknown): Bed {
   if (!raw || typeof raw !== 'object') return { ...EMPTY_BED };
 
   const obj = raw as Record<string, unknown>;
+
+  // Support legacy `events` key from earlier builds
+  const rawOops = obj.oops ?? obj.events;
 
   return {
     id: typeof obj.id === 'string' ? obj.id : EMPTY_BED.id,
@@ -30,8 +34,10 @@ export function deserializeBed(raw: unknown): Bed {
       obj.preferredChangeIntervalDays > 0
         ? obj.preferredChangeIntervalDays
         : EMPTY_BED.preferredChangeIntervalDays,
-    events: Array.isArray(obj.events)
-      ? obj.events.map(deserializeBedEvent).filter(Boolean)
+    streak:
+      typeof obj.streak === 'number' && obj.streak >= 0 ? obj.streak : 0,
+    oops: Array.isArray(rawOops)
+      ? rawOops.map(deserializeBedOops).filter((o): o is BedOops => o !== null)
       : [],
     createdAt: typeof obj.createdAt === 'string' ? obj.createdAt : EMPTY_BED.createdAt,
     updatedAt: typeof obj.updatedAt === 'string' ? obj.updatedAt : EMPTY_BED.updatedAt,
@@ -42,7 +48,7 @@ export function deserializeBed(raw: unknown): Bed {
   };
 }
 
-export function deserializeBedEvent(raw: unknown): BedEvent | null {
+export function deserializeBedOops(raw: unknown): BedOops | null {
   if (!raw || typeof raw !== 'object') return null;
   const obj = raw as Record<string, unknown>;
 
@@ -58,7 +64,7 @@ export function deserializeBedEvent(raw: unknown): BedEvent | null {
 
   return {
     id: obj.id,
-    type: obj.type as BedEvent['type'],
+    type: obj.type as BedOops['type'],
     label: obj.label,
     penalty: Math.max(0, obj.penalty),
     createdAt: obj.createdAt,
@@ -95,6 +101,10 @@ export function deserializeSettings(raw: unknown): UserSettings {
       obj.theme === 'light' || obj.theme === 'dark' || obj.theme === 'system'
         ? obj.theme
         : DEFAULT_SETTINGS.theme,
+    gender:
+      obj.gender === 'male' || obj.gender === 'female' || obj.gender === 'skip'
+        ? obj.gender
+        : DEFAULT_SETTINGS.gender,
     hasPets:
       typeof obj.hasPets === 'boolean' ? obj.hasPets : DEFAULT_SETTINGS.hasPets,
     sweatsOften:
@@ -103,6 +113,8 @@ export function deserializeSettings(raw: unknown): UserSettings {
         : DEFAULT_SETTINGS.sweatsOften,
     sharesBed:
       typeof obj.sharesBed === 'boolean' ? obj.sharesBed : DEFAULT_SETTINGS.sharesBed,
+    hasAC:
+      typeof obj.hasAC === 'boolean' ? obj.hasAC : DEFAULT_SETTINGS.hasAC,
     defaultIntervalDays:
       typeof obj.defaultIntervalDays === 'number' && obj.defaultIntervalDays > 0
         ? obj.defaultIntervalDays

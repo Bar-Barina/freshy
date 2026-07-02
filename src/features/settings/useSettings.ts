@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { UserSettings, DEFAULT_SETTINGS } from '@/types';
 import { storageGet, storageSet, STORAGE_KEYS } from '@/services/storage/mmkv';
 import { deserializeSettings } from '@/services/storage/serializers';
@@ -11,15 +11,13 @@ interface UseSettingsReturn {
 }
 
 export function useSettings(): UseSettingsReturn {
-  const [settings, setSettings] = useState<UserSettings>({ ...DEFAULT_SETTINGS });
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
+  // Lazy initializer — MMKV is synchronous, so state is populated on the first render.
+  // No useEffect needed; this avoids a redundant re-render on mount.
+  const [settings, setSettings] = useState<UserSettings>(() => {
     const raw = storageGet<unknown>(STORAGE_KEYS.SETTINGS);
-    const loaded = deserializeSettings(raw);
-    setSettings(loaded);
-    setIsLoaded(true);
-  }, []);
+    return deserializeSettings(raw);
+  });
+  const [isLoaded] = useState(true);
 
   const updateSettings = useCallback((partial: Partial<UserSettings>) => {
     setSettings((prev) => {
